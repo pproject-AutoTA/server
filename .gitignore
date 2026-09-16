@@ -1,11 +1,60 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Spring Boot
 HELP.md
-.gradle
-build/
+
+# Spring Boot config — 구조는 커밋, 시크릿만 제외
+src/main/resources/application-local.yml
+src/main/resources/application-secret.yml
+src/main/resources/application-*-secret.yml
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
 !gradle/wrapper/gradle-wrapper.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Docker
+.env
+.env.*
+!.env.example
+!.env.*.example
+docker-compose.override.yml
+
+# virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
+# Gradle
+.gradle/
+build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+# IntelliJ  IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# Eclipse / STS
 .apt_generated
 .classpath
 .factorypath
@@ -17,21 +66,18 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
+# VS Code
 .vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# 로컬 logback FILE_JSON 어펜더 출력 (Promtail 검증용)
+logs/
+
+# Claude Code 로컬 실행 설정 (개인 PC 절대 경로 포함)
+.claude/launch.json
+
+# Claude Code 로컬 컨텍스트 (커밋 금지)
+CLAUDE.local.md
