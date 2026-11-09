@@ -6,7 +6,7 @@
 
 기성 채점 엔진으로 Judge0이 있다. 판정 로직과 샌드박스가 이미 있어 쓰면 채점 코드를 거의 안 짜도 된다.
 
-그런데 Judge0 설치 절차는 호스트에 cgroup v1을 요구한다. 최신 릴리스 v1.13.1(2024-04-18)의 배포 절차도 GRUB에 `systemd.unified_cgroup_hierarchy=0`을 넣고 재부팅하라고 하며, cgroup v2 지원 언급은 없다. AKS 노드는 Kubernetes 1.25 이상에서 cgroup v2가 기본이고, 2026-11-09 테스트로 만든 1.36 클러스터의 노드 이미지는 Ubuntu 24.04였다. 관리형 AKS 노드에서는 커널 부팅 옵션을 바꾸는 것이 지원 범위 밖이라 v1로 되돌리는 것은 사실상 불가능하다(커스텀 노드 설정 항목에 cgroup 버전은 없는 것으로 파악, 문서 재확인 필요).
+그런데 Judge0 설치 절차는 호스트에 cgroup v1을 요구한다. 최신 릴리스 v1.13.1(2024-04-18)의 배포 절차도 GRUB에 `systemd.unified_cgroup_hierarchy=0`을 넣고 재부팅하라고 하며, cgroup v2 지원 언급은 없다. AKS 노드는 Kubernetes 1.25 이상에서 cgroup v2가 기본이고, 2026-11-09 테스트로 만든 1.36 클러스터의 노드 이미지는 Ubuntu 24.04였다. v1로 되돌리는 방법은 있다. Azure/AKS 예제 저장소의 `revert-cgroup-v1` DaemonSet이 특권 컨테이너로 노드의 GRUB에 `systemd.unified_cgroup_hierarchy=0`을 넣고 재부팅한다. 노드를 변조하고 재부팅하는 비권장 경로라 택하지 않는다.
 
 ## 결정
 

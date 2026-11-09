@@ -29,7 +29,7 @@ flowchart LR
    - DB 저장과 큐 발행은 한 트랜잭션이 아니다. 발행이 실패한 제출이 '대기'에 남지 않게 하는 방법(커밋 후 발행 + 재시도, 또는 멈춘 제출을 다시 발행하는 정리 작업)은 **(미정)**.
 2. `judge-worker`가 `judge.queue`에서 꺼내 채점 컨테이너를 띄우고 테스트케이스를 전부 실행한 뒤 판정을 `result.queue`로 보낸다.
 3. `lint-worker`가 `lint.queue`에서 꺼내 허용 요소를 검사하고 FLAG 결과를 `result.queue`로 보낸다. core-api는 이 결과를 기다리지 않는다. 판정은 LintResult 없이 확정된다.
-4. core-api가 `result.queue`를 받아 저장한다. 큐는 at-least-once라 같은 메시지가 두 번 올 수 있다. 중복 제거 키는 `submission_id`만이 아니라 **`(submission_id, 결과 종류)`**다. 제출 하나에 JudgeResult와 LintResult가 따로 오기 때문이다. 중복 제거는 DB 제약(유니크)으로 한다.
+4. core-api가 `result.queue`를 받아 저장한다. 큐는 at-least-once라 같은 메시지가 두 번 올 수 있다. 중복 제거 키는 `submission_id`만이 아니라 **`(submission_id, 결과 종류)`**다. 제출 하나에 JudgeResult와 LintResult가 따로 오기 때문이다. 중복 제거는 DB 제약(유니크) 또는 조건부 갱신으로 한다(`docs/erd.md` §5).
 
 워커는 core-api를 호출하지 않는다. 의존은 core-api → 큐 → 워커 → 큐 → core-api 한 방향이다.
 
@@ -87,7 +87,9 @@ RabbitMQ 하나를 세 서비스가 같이 쓴다. 운영 브로커는 **클러�
 
 | 항목 | 로컬 (`DockerRunner`) | 운영 (`KubernetesRunner`) |
 | --- | --- | --- |
-| CPU 시간·메모리 상한 | `--memory`, 실행 스크립트의 `RLIMIT_CPU` | `resources.limits`(request = limit), 실행 스크립트의 `RLIMIT_CPU` |
+| CPU 시간 | 컨테이너 cgroup `cpu.stat`로 측정해 판정. `RLIMIT_CPU`는 안전장치(ADR 0004) | 같음 |
+| 벽시계 상한 | CPU 시간이 쌓이지 않는 대기 코드를 끊는 안전 상한(CPU 제한의 몇 배). 넘으면 TLE | 같음 |
+| 메모리 상한 | `--memory` | `resources.limits`(request = limit) |
 | 출력 상한 | 1MB 초과 시 중단, RE | 같음 |
 | 네트워크 | `--network none` | NetworkPolicy로 judge 네임스페이스 ingress·egress 기본 거부. Pod에는 네트워크를 끄는 옵션이 없다 |
 | 파일시스템 | `--read-only` + 작업 디렉터리만 쓰기 | `readOnlyRootFilesystem` + `emptyDir` 작업 디렉터리 |
@@ -119,18 +121,18 @@ Docker 소켓 마운트는 호스트 root 권한과 같다. 로컬 전용이고 
 
 ### 운영 (Azure AKS)
 
-노드는 `Standard_B2ls_v2`(2 vCPU, 4 GiB) 2대다. 기획서의 `Standard_B2s`는 이 구독의 koreacentral에서 제공되지 않아 같은 스펙·가격대인 B2ls_v2로 바꿨다. AKS 문서는 시스템 노드 풀에 4 vCPU 이상·B시리즈 불가라고 적고 있지만, 2026-11-09 실제 생성(AKS 1.36, koreacentral)에서는 B2ls_v2 시스템 풀과 taint를 건 B2ls_v2 사용자 풀이 둘 다 만들어졌다. 정책이 바뀌어 막히면 4 vCPU 비B 시스템 노드 + B2ls_v2 채점 노드(쿼터 6 안)로 바꾼다.
+노드는 `Standard_B2ls_v2`(2 vCPU, 4 GiB) 2대다. 기획서의 `Standard_B2s`는 이 구독의 koreacentral에서 제공되지 않아 같은 스펙인 B2ls_v2로 바꿨다. 가격은 **(검증 전)**이다. AKS 문서는 시스템 노드 풀에 4 vCPU 이상·최소 2노드·B시리즈 불가라고 적고 있지만, 2026-11-09 실제 생성(AKS 1.36, koreacentral)에서는 B2ls_v2 시스템 풀 1대와 taint를 건 B2ls_v2 사용자 풀 1대가 둘 다 만들어졌다. 정책이 바뀌어 막히면 4 vCPU 비B 시스템 노드 + B2ls_v2 채점 노드로 바꾸되, 비B 패밀리 쿼터는 확인 전이고 6 vCPU를 다 쓰면 노드 풀 업그레이드용 surge 여유가 없다(ADR 0008).
 
 | 구성 요소 | 어디서 |
 | --- | --- |
 | core-api, judge-worker, lint-worker, web, Ingress 컨트롤러 | 서비스 노드 풀 (시스템 풀, B2ls_v2 1대) |
 | 채점 Job | 채점 노드 풀 (사용자 풀, B2ls_v2 1대, taint `autota/judge=true:NoSchedule`), judge 네임스페이스 |
 | PostgreSQL | Supabase (클러스터 밖) |
-| RabbitMQ | 학교 AWS EC2 1대 (클러스터 밖, EIP로 주소 고정). `infra/ec2/docker-compose.yml`, AMQPS 5671(자체 서명 CA). 보안 그룹은 5671·15672 모두 AKS 아웃바운드 IP만 허용. 15672는 ADMIN-01이 관리 API를 읽는 용도이고, 팀원의 관리 UI 접근은 포트를 열지 않고 SSH 터널로 한다 |
+| RabbitMQ | 학교 AWS EC2 1대 (클러스터 밖, EIP로 주소 고정). `infra/ec2/docker-compose.yml`, AMQPS 5671과 관리 API 15671 모두 자체 서명 CA로 TLS. 보안 그룹은 두 포트 모두 AKS 아웃바운드 IP만 허용. 15671은 ADMIN-01이 관리 API를 읽는 용도이고, 평문 15672는 열지 않는다. 팀원의 관리 UI 접근은 SSH 터널로 한다 |
 | 컨테이너 이미지 | GHCR. 비공개면 `imagePullSecrets` 필요 |
 | 외부 진입 | Ingress → Standard Load Balancer + 공인 IP |
 
-노드 자원은 4 GiB라도 전부 쓸 수 없다. AKS(1.29+)는 메모리의 25% 또는 `20MB × maxPods + 50MB` 중 작은 값을 kubelet용으로 떼고, 100Mi를 eviction 여유로 둔다. 기본 `maxPods`는 250이라 4 GiB 노드에서는 25% 상한(약 1 GiB)에 걸린다. `maxPods`를 48 이하로 잡아야 예약량이 줄고(30이면 약 650 MB), 생성 후에는 바꿀 수 없다. 거기에 시스템 Pod가 올라가므로 앱이 쓸 수 있는 건 3 GB가 안 되고, 앱마다 힙과 자원 요청량을 명시한다. vCPU 쿼터는 2026-11-09 기준 koreacentral에서 리전 전체 6, Bsv2 패밀리 10이다(`az vm list-usage`).
+노드 자원은 4 GiB라도 전부 쓸 수 없다. AKS(1.29+)는 메모리의 25% 또는 `20MB × maxPods + 50MB` 중 작은 값을 kubelet용으로 떼고, 100Mi를 eviction 여유로 둔다. 기본 `maxPods`는 250이라 4 GiB 노드에서는 25% 상한(약 1 GiB)에 걸린다. `maxPods`는 **30~48**로 잡는다. 48 이하라야 예약량이 줄고(30이면 약 650 MB), AKS 문서는 시스템 풀에 30 이상을 요구한다. 생성 후에는 바꿀 수 없다. 거기에 시스템 Pod가 올라가므로 앱이 쓸 수 있는 건 3 GB가 안 되고, 앱마다 힙과 자원 요청량을 명시한다. vCPU 쿼터는 2026-11-09 기준 koreacentral에서 리전 전체 6, Bsv2 패밀리 10이다(`az vm list-usage`).
 
 `az aks create` 기본값은 Azure CNI Overlay, `networkPolicy: none`이다. Terraform에서 네트워크 정책 엔진을 명시하지 않으면 §4의 NetworkPolicy가 무시된다. Standard Load Balancer와 아웃바운드 공인 IP 1개가 자동으로 생기며 이것도 과금 대상이다. 이 아웃바운드 IP는 클러스터를 다시 만들면 바뀌므로, EC2 보안 그룹의 허용 IP도 같이 갱신한다.
 
@@ -152,7 +154,7 @@ Docker 소켓 마운트는 호스트 root 권한과 같다. 로컬 전용이고 
 | `deploy/` | K8s 매니페스트. Deployment·Service, Ingress, Secret(설정값, 브로커 접속 정보, `imagePullSecrets`), judge 네임스페이스·NetworkPolicy·RBAC(judge-worker가 Job을 만들고 결과를 읽을 권한) |
 | `.github/workflows/` | 서비스별 워크플로. `paths:` 필터로 바뀐 서비스만 빌드 → GHCR 푸시 → 배포 |
 
-배포는 `main`에서만 나간다. `develop`은 빌드·테스트까지만 한다. 클러스터는 크레딧 때문에 쓰지 않을 때 `az aks stop`으로 내린다. 멈춘 동안 Deployment 등이 관리하는 객체는 유지되고, 다시 올릴 때는 15~30분 간격을 둔다.
+배포는 `main`에서만 나간다. `develop`은 빌드·테스트까지만 한다. 클러스터는 크레딧 때문에 쓰지 않을 때 `az aks stop`으로 내린다. 멈춘 동안 Deployment 등이 관리하는 객체는 유지되고, 다시 올릴 때는 15~30분 간격을 둔다. 멈춘 클러스터에는 배포 단계가 실패하므로 `main`에 머지하기 전에 클러스터를 올려 둔다.
 
 ## 7. 저장소 구조
 

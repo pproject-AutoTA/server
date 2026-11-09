@@ -8,9 +8,11 @@
 
 ## 결정
 
-RabbitMQ를 쓴다. 큐는 `judge.queue`, `lint.queue`, `result.queue` 세 개이고 **quorum 타입**으로 만든다. 반복 실패 격리는 quorum 큐의 `delivery-limit`으로 하고, 한도를 넘긴 메시지는 dead letter 큐로 보낸다. 재시도 횟수는 메시지의 `x-death` 헤더 `count`로 확인한다.
+RabbitMQ 4.3 이상을 쓴다. 큐는 `judge.queue`, `lint.queue`, `result.queue` 세 개이고 **quorum 타입**으로 만든다. 반복 실패 격리는 quorum 큐의 `delivery-limit`(4.0부터 기본 20)으로 하고, 기능 명세의 "3회 재시도"에 맞춰 값을 정한다. 한도를 넘긴 메시지는 dead letter 큐로 보낸다. 재전달 횟수는 `x-delivery-count` 헤더로 확인한다. `x-death`의 `count`는 dead-letter된 횟수라 재시도 횟수가 아니다.
 
-클래식 큐에는 내장 지연 재시도가 없어서 DLX + TTL 사이클을 직접 구성해야 한다. RabbitMQ 문서도 이 용도에는 quorum 큐를 권장한다.
+4.3부터 한도는 `delivery-count` 기준이고, `basic.nack`(requeue)는 이 값을 올리지 않아 nack으로 돌려보내기만 하면 한도가 영영 걸리지 않는다. 소비자의 실패 처리 방식(어떤 동작이 집계되는지)은 구현 때 quorum 큐 문서의 표로 확인하고 코드에 못 박는다.
+
+quorum 큐의 실제 이점은 poison message 격리(`delivery-limit`)다. 지연 재시도(back-off)는 4.3부터 있고 기본 비활성(`x-delayed-retry-type: disabled`)이라 필요하면 따로 켠다. 클래식 큐는 DLX + TTL 사이클을 직접 구성해야 한다.
 
 검토한 대안:
 

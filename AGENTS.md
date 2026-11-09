@@ -15,6 +15,9 @@ Python 과제 자동 채점 서비스의 서버 저장소. 레포 하나에 서�
 ## 규칙 문서
 
 - Git 컨벤션: `docs/conventions/git-convention.md`
+- 아키텍처: `docs/architecture.md`
+- ERD: `docs/erd.md`
+- 결정 기록(ADR): `docs/adr/` (형식은 `docs/adr/README.md`)
 - API 명세·기획서: Notion (저장소 밖)
 
 커밋 메시지를 쓰거나 브랜치·PR을 만들기 전에 반드시 `docs/conventions/git-convention.md`를 읽는다. §5 체크리스트 순서대로 scope를 정하고 자가 검증까지 마친 뒤 작성한다.
@@ -23,7 +26,7 @@ Python 과제 자동 채점 서비스의 서버 저장소. 레포 하나에 서�
 
 - 다른 도메인의 데이터가 필요하면 그 도메인의 service를 호출한다. repository를 직접 쓰지 않는다.
 - 큐 메시지(`contracts/`)는 필드 추가만 한다. 삭제·이름 변경은 A·B 합의 후 별도 PR.
-- 서비스마다 독립 Gradle 프로젝트다. 다른 서비스의 코드를 import하지 않는다.
+- 서비스마다 독립 프로젝트다(Gradle 또는 Python). 다른 서비스의 코드를 import하지 않는다.
 - 커밋은 요청받았을 때만 한다. 커밋 메시지에 `Co-Authored-By`를 넣지 않는다.
 
 ## 절대 하지 않는 것

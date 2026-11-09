@@ -148,7 +148,7 @@ erDiagram
 | PK | `bigint generated always as identity` |
 | 시각 | `timestamptz`. 모든 테이블에 `created_at` 기본 `now()` |
 | 열거형 | PostgreSQL enum 대신 `varchar` + `CHECK`. 값을 추가할 때 마이그레이션이 단순하다 **(미정)** |
-| 삭제 | soft delete 없음. 부모 삭제는 `RESTRICT`, 제출의 자식(케이스 결과, 검사 결과)만 `CASCADE` |
+| 삭제 | soft delete 없음. 부모 삭제는 `RESTRICT`. 제출의 자식 중 결과성 테이블(`submission_case_results`, `judge_failures`, `lint_results`, `lint_findings`)은 `CASCADE`, 점수(`scores`, `score_adjustments`)는 `RESTRICT` |
 | 점수 | `numeric(5,2)`. 소수 둘째 자리 반올림은 애플리케이션에서 |
 | 입력 검증 | 길이·범위(제목 1~100자, 시간 100~10000 ms, 메모리 32~512 MB, 학기 `YYYY-N`)는 API 400 검증으로 막는다. DB에는 NOT NULL과 UNIQUE만 둔다 |
 
@@ -303,7 +303,7 @@ FLAG는 `verdict` 값이 아니다. 기획서대로 판정과 분리해 `lint_re
 | 컬럼 | 타입 | 제약 | 비고 |
 | --- | --- | --- | --- |
 | id | bigint | PK | |
-| submission_id | bigint | FK submissions, UNIQUE, NOT NULL | 최종 실패한 제출당 한 행 |
+| submission_id | bigint | FK submissions ON DELETE CASCADE, UNIQUE, NOT NULL | 최종 실패한 제출당 한 행 |
 | retry_count | int | NOT NULL | 재시도 횟수. API `retryCount` |
 | reason | text | NOT NULL | 워커가 남긴 메시지. 학생 코드의 RE는 제외 |
 | failed_at | timestamptz | NOT NULL | 최종 실패 시각 |
@@ -325,15 +325,15 @@ ADMIN-02 응답(`submissionId, problemId, failedAt, reason, retryCount`)과 1:1�
 
 | 테이블 | 컬럼 | 비고 |
 | --- | --- | --- |
-| lint_results | id, submission_id FK UNIQUE, flagged, checked_at | 제출당 하나. Must에서는 행이 없고 API의 `flagged`는 항상 `false` |
+| lint_results | id, submission_id FK CASCADE UNIQUE, flagged, checked_at | 제출당 하나. Must에서는 행이 없고 API의 `flagged`는 항상 `false` |
 | lint_findings | id, lint_result_id FK CASCADE, kind, tag, line, col, snippet | `kind`: `BANNED` `NOT_ALLOWED` `MISSING_REQUIRED`. 교수만 본다 |
 
 ### scores, score_adjustments (S2·S3)
 
 | 테이블 | 컬럼 | 비고 |
 | --- | --- | --- |
-| scores | id, submission_id FK UNIQUE, auto_score, final_score, status, finalized_by FK users, finalized_at | 성적 대상 제출당 하나. `status`: `PROVISIONAL` `FINAL`. 공개 시 미확정은 `auto_score`로 확정 |
-| score_adjustments | id, score_id FK, before_score, after_score, reason NOT NULL, adjusted_by FK users, adjusted_at | 조정마다 한 행. 공개 뒤 수정도 여기 남는다 |
+| scores | id, submission_id FK RESTRICT UNIQUE, auto_score, final_score, status, finalized_by FK users, finalized_at | 성적 대상 제출당 하나. `status`: `PROVISIONAL` `FINAL`. 공개 시 미확정은 `auto_score`로 확정 |
+| score_adjustments | id, score_id FK RESTRICT, before_score, after_score, reason NOT NULL, adjusted_by FK users, adjusted_at | 조정마다 한 행. 공개 뒤 수정도 여기 남는다 |
 
 점수는 과제가 아니라 **문제(제출) 단위**로 저장하고 과제 점수는 합산한다. RES-04의 API가 `PATCH /professor/submissions/{id}/score`라 이 단위가 맞다. C1(지각 제출)을 켜면 조정 뒤에 새 제출이 들어와 성적 대상이 바뀔 수 있다. 그때 조정을 어떻게 옮길지는 C1 착수 때 정한다.
 
