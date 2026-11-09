@@ -10,7 +10,7 @@ Python 과제 자동 채점 서비스의 서버 저장소. 레포 하나에 서�
 | `lint-worker/` | Python 허용 요소 검사기 | A |
 | `contracts/` | 큐 메시지 스키마. 서비스 간 유일한 접점 | A·B |
 | `sql/` | 스키마, seed | A |
-| `infra/` `deploy/` | Terraform, K8s 매니페스트 | B |
+| `infra/` `deploy/` | Terraform, EC2 RabbitMQ compose(`infra/ec2/`), K8s 매니페스트 | B |
 
 ## 규칙 문서
 

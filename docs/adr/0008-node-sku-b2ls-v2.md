@@ -14,7 +14,7 @@
 
 ## 결정
 
-노드는 `Standard_B2ls_v2` 2대다. 시스템 풀 1대에 서비스(core-api, judge-worker, lint-worker, web, RabbitMQ, Ingress)를 올리고, 사용자 풀 1대를 taint로 채점 Job 전용으로 쓴다. 리전은 koreacentral, OS 디스크는 30 GB.
+노드는 `Standard_B2ls_v2` 2대다. 시스템 풀 1대에 서비스(core-api, judge-worker, lint-worker, web, Ingress)를 올리고, 사용자 풀 1대를 taint로 채점 Job 전용으로 쓴다. RabbitMQ는 0012에서 클러스터 밖으로 뺐다. 리전은 koreacentral, OS 디스크는 30 GB.
 
 ## 결과
 

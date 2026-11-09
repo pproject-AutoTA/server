@@ -7,12 +7,17 @@
 ```mermaid
 flowchart LR
     web[web<br/>React] -->|REST /api/v1| api[core-api<br/>Spring Boot]
-    api -->|JudgeRequest| jq[(judge.queue)]
-    api -.->|LintRequest, S1| lq[(lint.queue)]
+    subgraph mq[RabbitMQ · 학교 AWS EC2 · AMQPS]
+        jq[(judge.queue)]
+        lq[(lint.queue)]
+        rq[(result.queue)]
+    end
+    api -->|JudgeRequest| jq
+    api -.->|LintRequest, S1| lq
     jq --> judge[judge-worker<br/>Spring Boot]
     lq -.-> lint[lint-worker<br/>Python]
     judge -->|채점 컨테이너 실행| img[judge-image<br/>python:3.12-slim]
-    judge -->|JudgeResult| rq[(result.queue)]
+    judge -->|JudgeResult| rq
     lint -.->|LintResult| rq
     rq --> api
     api --- db[(PostgreSQL<br/>Supabase)]
@@ -66,7 +71,7 @@ core-api/src/main/java/com/autota/server/
 
 ## 3. 큐
 
-RabbitMQ 하나를 세 서비스가 같이 쓴다. 브로커는 클러스터 안(로컬은 compose)에 있다.
+RabbitMQ 하나를 세 서비스가 같이 쓴다. 운영 브로커는 **클러스터 밖, 학교 AWS EC2 1대**에 docker compose로 띄우고 AMQPS(5671, TLS)로 붙는다(ADR 0012). 로컬은 compose의 RabbitMQ다. 큐는 durable, 메시지는 persistent라 AKS를 내렸다 올려도 메시지가 남는다. EC2에는 EIP를 붙여 주소를 고정하고, 학교 계정에서는 도메인을 쓸 수 없어 TLS는 자체 서명 CA로 한다. 보안 그룹 인바운드 규칙은 팀이 직접 추가할 수 있다(2026-11-09 조교 확인).
 
 | 큐 | 보내는 쪽 | 받는 쪽 | 메시지 |
 | --- | --- | --- | --- |
@@ -118,15 +123,16 @@ Docker 소켓 마운트는 호스트 root 권한과 같다. 로컬 전용이고 
 
 | 구성 요소 | 어디서 |
 | --- | --- |
-| core-api, judge-worker, lint-worker, web, RabbitMQ, Ingress 컨트롤러 | 서비스 노드 풀 (시스템 풀, B2ls_v2 1대) |
+| core-api, judge-worker, lint-worker, web, Ingress 컨트롤러 | 서비스 노드 풀 (시스템 풀, B2ls_v2 1대) |
 | 채점 Job | 채점 노드 풀 (사용자 풀, B2ls_v2 1대, taint `autota/judge=true:NoSchedule`), judge 네임스페이스 |
 | PostgreSQL | Supabase (클러스터 밖) |
+| RabbitMQ | 학교 AWS EC2 1대 (클러스터 밖, EIP로 주소 고정). `infra/ec2/docker-compose.yml`, AMQPS 5671(자체 서명 CA). 보안 그룹은 5671·15672 모두 AKS 아웃바운드 IP만 허용. 15672는 ADMIN-01이 관리 API를 읽는 용도이고, 팀원의 관리 UI 접근은 포트를 열지 않고 SSH 터널로 한다 |
 | 컨테이너 이미지 | GHCR. 비공개면 `imagePullSecrets` 필요 |
 | 외부 진입 | Ingress → Standard Load Balancer + 공인 IP |
 
 노드 자원은 4 GiB라도 전부 쓸 수 없다. AKS(1.29+)는 메모리의 25% 또는 `20MB × maxPods + 50MB` 중 작은 값을 kubelet용으로 떼고, 100Mi를 eviction 여유로 둔다. 기본 `maxPods`는 250이라 4 GiB 노드에서는 25% 상한(약 1 GiB)에 걸린다. `maxPods`를 48 이하로 잡아야 예약량이 줄고(30이면 약 650 MB), 생성 후에는 바꿀 수 없다. 거기에 시스템 Pod가 올라가므로 앱이 쓸 수 있는 건 3 GB가 안 되고, 앱마다 힙과 자원 요청량을 명시한다. vCPU 쿼터는 2026-11-09 기준 koreacentral에서 리전 전체 6, Bsv2 패밀리 10이다(`az vm list-usage`).
 
-`az aks create` 기본값은 Azure CNI Overlay, `networkPolicy: none`이다. Terraform에서 네트워크 정책 엔진을 명시하지 않으면 §4의 NetworkPolicy가 무시된다. Standard Load Balancer와 아웃바운드 공인 IP 1개가 자동으로 생기며 이것도 과금 대상이다.
+`az aks create` 기본값은 Azure CNI Overlay, `networkPolicy: none`이다. Terraform에서 네트워크 정책 엔진을 명시하지 않으면 §4의 NetworkPolicy가 무시된다. Standard Load Balancer와 아웃바운드 공인 IP 1개가 자동으로 생기며 이것도 과금 대상이다. 이 아웃바운드 IP는 클러스터를 다시 만들면 바뀌므로, EC2 보안 그룹의 허용 IP도 같이 갱신한다.
 
 ### 로컬과 운영의 차이
 
@@ -134,6 +140,7 @@ Docker 소켓 마운트는 호스트 root 권한과 같다. 로컬 전용이고 
 | --- | --- | --- |
 | 채점 실행 | `DockerRunner` | `KubernetesRunner` (Job 생성 → 완료 대기 → 표준 출력·종료 상태 회수 → 삭제) |
 | DB | compose postgres | Supabase |
+| 브로커 | compose RabbitMQ (5672) | 학교 EC2 RabbitMQ (AMQPS 5671) |
 | 네트워크 차단 | `--network none` | NetworkPolicy 기본 거부 |
 | 설정 | `application-dev.yml` + `.env` | `application-prod.yml` + K8s Secret |
 
@@ -141,8 +148,8 @@ Docker 소켓 마운트는 호스트 root 권한과 같다. 로컬 전용이고 
 
 | 위치 | 내용 |
 | --- | --- |
-| `infra/` | Terraform. VNet, AKS, 노드 풀, 상태 백엔드(Azure Storage) |
-| `deploy/` | K8s 매니페스트. Deployment·Service, RabbitMQ, Ingress, Secret(설정값, `imagePullSecrets`), judge 네임스페이스·NetworkPolicy·RBAC(judge-worker가 Job을 만들고 결과를 읽을 권한) |
+| `infra/` | Terraform. VNet, AKS, 노드 풀, 상태 백엔드(Azure Storage). `infra/ec2/`에는 학교 EC2의 RabbitMQ compose 파일(Terraform 밖이라 재현 기록용) |
+| `deploy/` | K8s 매니페스트. Deployment·Service, Ingress, Secret(설정값, 브로커 접속 정보, `imagePullSecrets`), judge 네임스페이스·NetworkPolicy·RBAC(judge-worker가 Job을 만들고 결과를 읽을 권한) |
 | `.github/workflows/` | 서비스별 워크플로. `paths:` 필터로 바뀐 서비스만 빌드 → GHCR 푸시 → 배포 |
 
 배포는 `main`에서만 나간다. `develop`은 빌드·테스트까지만 한다. 클러스터는 크레딧 때문에 쓰지 않을 때 `az aks stop`으로 내린다. 멈춘 동안 Deployment 등이 관리하는 객체는 유지되고, 다시 올릴 때는 15~30분 간격을 둔다.
@@ -157,7 +164,7 @@ server/
 ├─ lint-worker/         # A
 ├─ contracts/           # A·B 공동. 큐 메시지 정의
 ├─ sql/                 # A. 스키마, seed
-├─ infra/               # B. Terraform
+├─ infra/               # B. Terraform, ec2/ (학교 EC2 RabbitMQ compose)
 ├─ deploy/              # B. K8s 매니페스트
 ├─ docs/                # 이 문서, ADR, 컨벤션
 ├─ .github/             # 워크플로, CODEOWNERS, 템플릿

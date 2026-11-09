@@ -78,7 +78,7 @@ git commit -m "<type>(<scope>): <subject> (#issue)"
 | lint | `lint-worker/` | 허용 요소 검사기 |
 | contract | `contracts/` | 큐 메시지 스키마·예시 |
 | db | `sql/` | schema.sql, seed.sql |
-| infra | `infra/` | Terraform (AKS, 네트워크) |
+| infra | `infra/` | Terraform (AKS, 네트워크), 학교 EC2 RabbitMQ compose |
 | k8s | `deploy/` | K8s 매니페스트, NetworkPolicy, RBAC |
 | compose | `docker-compose.yml` | 로컬 실행 환경 |
 | github | `.github/` | 워크플로, CODEOWNERS, 템플릿 |

@@ -24,3 +24,4 @@
 | [0009](0009-monorepo.md) | 서버는 레포 하나에 서비스별 폴더, 클라이언트는 별도 레포 | 채택 |
 | [0010](0010-azure-aks.md) | 클라우드는 Azure, 오케스트레이션은 AKS | 채택 |
 | [0011](0011-github-actions-ghcr.md) | CI/CD는 GitHub Actions, 이미지 저장소는 GHCR | 채택 |
+| [0012](0012-broker-outside-cluster.md) | 메시지 브로커는 클러스터 밖(학교 AWS EC2)에 둔다 | 채택 |
