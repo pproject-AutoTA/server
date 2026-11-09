@@ -21,3 +21,6 @@
 | [0006](0006-judge-runner-abstraction.md) | 채점 실행부를 인터페이스로 추상화한다 | 채택 |
 | [0007](0007-self-issued-jwt.md) | 인증은 core-api가 JWT를 직접 발급한다 | 제안 |
 | [0008](0008-node-sku-b2ls-v2.md) | AKS 노드는 Standard_B2ls_v2 2대 | 채택 |
+| [0009](0009-monorepo.md) | 서버는 레포 하나에 서비스별 폴더, 클라이언트는 별도 레포 | 채택 |
+| [0010](0010-azure-aks.md) | 클라우드는 Azure, 오케스트레이션은 AKS | 채택 |
+| [0011](0011-github-actions-ghcr.md) | CI/CD는 GitHub Actions, 이미지 저장소는 GHCR | 채택 |
