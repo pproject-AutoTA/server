@@ -103,10 +103,10 @@ feat(global): SUBMISSION 에러코드 추가
 
 core-api와 judge-worker·lint-worker가 만나는 유일한 지점이라 별도로 정한다.
 
-1. `contract` 커밋으로 스키마를 먼저 바꾼다
+1. `contract` 커밋으로 스키마·예시·`contracts/README.md`를 먼저 바꾼다. `examples/`가 스키마를 통과해야 한다
 2. 같은 PR 안에서 보내는 쪽과 받는 쪽을 둘 다 고친다 (`submission` + `judge`, 또는 `submission` + `lint`)
 3. 필드는 **추가만** 하고, 새 필드는 선택값으로 둔다. 이름 변경·삭제는 A·B 합의 후 별도 PR로
-4. 이 PR은 A·B 둘 다 Approve해야 머지한다
+4. 이 PR은 상대 담당의 Approve가 필수다. 작성자는 자기 PR을 승인할 수 없으므로, 보내는 쪽·받는 쪽 수정 내용과 예시 검증 결과를 PR 본문에 적는 것으로 작성자 몫을 대신한다
 
 ```
 docs(contract): JudgeResult에 memoryKb 필드 추가
@@ -174,7 +174,7 @@ chore/#{이슈번호}/{주제}        예: chore/#7/gitignore-update
 - PR 제목은 이슈 제목과 같은 `[Type] 작업 내용 (#이슈번호)` 형식 (커밋의 `type(scope): subject`와 다름)
 - PR 템플릿 모든 항목 작성
 - 리뷰어는 CODEOWNERS로 자동 지정. **상대 서버 담당 1명 Approve** 후 머지
-  - `contracts/` 변경 PR은 A·B 둘 다 Approve
+  - `contracts/` 변경 PR은 상대 담당 Approve 필수. 작성자 쪽 확인은 PR 본문에 적는다(§2)
 - 변경된 서비스의 CI(빌드·테스트)가 통과한 뒤 머지
 - 머지 후 브랜치 삭제
 
@@ -220,6 +220,6 @@ AI 에이전트에게 커밋·브랜치·PR을 맡길 때도 이 순서대로 �
 - 각 커밋에서 해당 서비스가 빌드되고 테스트가 통과하는가
 - 도메인에 걸치면 피호출 측 먼저, 호출 측 나중으로 나눴는가
 - global 변경, sql 변경을 독립 커밋으로 분리했는가
-- contracts를 바꿨다면 보내는 쪽과 받는 쪽을 같은 PR에서 고쳤고, 기존 필드를 지우거나 이름을 바꾸지 않았는가
+- contracts를 바꿨다면 보내는 쪽과 받는 쪽을 같은 PR에서 고쳤고, 기존 필드를 지우거나 이름을 바꾸지 않았는가. `contracts/examples/`가 스키마를 통과하는가
 - 브랜치명이 §3 패턴이고 소문자인가 (`{type}/#{이슈}/{주제}`)
 - 머지 대상이 맞는가 — 작업 브랜치 → develop, hotfix → main·develop (작업 브랜치 → main 직접 금지)
