@@ -8,7 +8,7 @@ Azure 크레딧이 한정돼 있어 클러스터를 쓰지 않을 때 내리고,
 
 ## 결정
 
-PostgreSQL은 Supabase 관리형을 쓰고 클러스터 밖에 둔다. 로컬 개발은 docker compose의 postgres를 쓴다. 트랙 산출물 "DB 덤프"는 시연 전 `pg_dump`로 떠서 `sql/`에 넣는다.
+PostgreSQL은 Supabase 관리형을 쓰고 클러스터 밖에 둔다. 로컬 개발은 docker compose의 postgres를 쓴다. 트랙 산출물 "DB 덤프"는 시연 전 `pg_dump`로 떠서 `sql/`에 넣는다. 같은 원칙을 메시지 브로커에도 적용했다(0012).
 
 관리형 PostgreSQL 중 Supabase를 고른 이유:
 

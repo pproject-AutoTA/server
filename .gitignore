@@ -81,3 +81,11 @@ logs/
 
 # Claude Code 로컬 컨텍스트 (커밋 금지)
 CLAUDE.local.md
+
+# Terraform (상태 파일과 변수 파일에 시크릿이 들어간다)
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
+crash.log
