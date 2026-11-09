@@ -5,6 +5,6 @@
 # 폴더 담당 (AGENTS.md)
 #   A @user040131 : core-api/ lint-worker/ sql/
 #   B @gichanGim  : judge-worker/ judge-image/ infra/ deploy/ docker-compose.yml .github/workflows/
-#   공동          : contracts/ (상대 담당 Approve 필수), docs/, AGENTS.md, CLAUDE.md
+#   공동          : contracts/ (A·B 둘 다 Approve), docs/, AGENTS.md, CLAUDE.md
 
 * @user040131 @gichanGim
