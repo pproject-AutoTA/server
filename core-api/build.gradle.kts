@@ -6,7 +6,7 @@ plugins {
 
 group = "com.autota"
 version = "0.0.1-SNAPSHOT"
-description = "server"
+description = "core-api"
 
 java {
     toolchain {

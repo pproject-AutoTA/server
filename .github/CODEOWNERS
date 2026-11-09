@@ -1,0 +1,10 @@
+# 리뷰어 자동 지정.
+# GitHub는 PR 작성자를 리뷰어로 넣지 않으므로, 담당자 한 명만 적은 폴더는 그 담당자가 PR을 올리면
+# 리뷰어가 아무도 잡히지 않는다. 2인 팀이라 모든 경로에 둘을 적어 상대 담당이 리뷰어로 잡히게 한다.
+#
+# 폴더 담당 (AGENTS.md)
+#   A @user040131 : core-api/ lint-worker/ sql/
+#   B @gichanGim  : judge-worker/ judge-image/ infra/ deploy/ docker-compose.yml .github/workflows/
+#   공동          : contracts/ (A·B 둘 다 Approve), docs/, AGENTS.md, CLAUDE.md
+
+* @user040131 @gichanGim
