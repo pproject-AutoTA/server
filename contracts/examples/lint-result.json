@@ -1,0 +1,9 @@
+{
+  "submissionId": 342,
+  "status": "DONE",
+  "flagged": true,
+  "findings": [
+    { "kind": "BANNED", "tag": "call:sorted", "line": 2, "col": 11, "snippet": "    return sorted(arr)" }
+  ],
+  "checkedAt": "2026-11-20T06:08:02Z"
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pproject-AutoTA/server/contracts/judge-request.schema.json",
+  "title": "JudgeRequest",
+  "description": "core-api -> judge.queue -> judge-worker. 제출 한 건의 채점 요청.",
+  "type": "object",
+  "required": ["submissionId", "problemId", "language", "code", "cpuTimeLimitMs", "memoryLimitMb", "testcases", "requestedAt"],
+  "properties": {
+    "submissionId": { "type": "integer", "minimum": 1, "description": "멱등 키. submissions.id" },
+    "problemId": { "type": "integer", "minimum": 1 },
+    "language": { "type": "string", "enum": ["python3.12"], "description": "실행 이미지 선택용. 지금은 하나" },
+    "code": { "type": "string", "maxLength": 65536, "description": "학생 소스 코드. 64KB 상한은 core-api가 먼저 검사" },
+    "cpuTimeLimitMs": { "type": "integer", "minimum": 100, "maximum": 10000, "description": "케이스당 CPU 시간 제한(ms)" },
+    "memoryLimitMb": { "type": "integer", "minimum": 32, "maximum": 512, "description": "케이스당 메모리 제한(MB)" },
+    "testcases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["no", "input", "expectedOutput"],
+        "properties": {
+          "no": { "type": "integer", "minimum": 1, "description": "문제 안 케이스 번호. testcases.order_no" },
+          "input": { "type": "string" },
+          "expectedOutput": { "type": "string" }
+        }
+      }
+    },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  }
+}

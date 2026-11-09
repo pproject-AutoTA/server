@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pproject-AutoTA/server/contracts/judge-started.schema.json",
+  "title": "JudgeStarted",
+  "description": "judge-worker -> result.queue -> core-api. 채점 컨테이너를 띄우기 직전에 보낸다. core-api는 PENDING일 때만 RUNNING으로 바꾼다.",
+  "type": "object",
+  "required": ["submissionId", "attempt", "workerId", "startedAt"],
+  "properties": {
+    "submissionId": { "type": "integer", "minimum": 1 },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 4, "description": "몇 번째 시도인지. x-delivery-count + 1" },
+    "workerId": { "type": "string", "description": "워커 인스턴스 식별자(호스트명 등)" },
+    "startedAt": { "type": "string", "format": "date-time" }
+  }
+}
