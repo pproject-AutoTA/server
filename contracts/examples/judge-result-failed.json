@@ -1,0 +1,11 @@
+{
+  "submissionId": 339,
+  "status": "FAILED",
+  "attempt": 4,
+  "workerId": "judge-worker-7c9d4-x2k1p",
+  "judgedAt": "2026-11-20T05:50:12Z",
+  "error": {
+    "code": "SCHEDULE_TIMEOUT",
+    "message": "Job autota-judge-339 not scheduled within 60s: 0/1 nodes are available: 1 Insufficient cpu"
+  }
+}

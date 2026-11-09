@@ -1,0 +1,14 @@
+{
+  "submissionId": 342,
+  "problemId": 12,
+  "language": "python3.12",
+  "code": "s = input()\ndepth = 0\nfor c in s:\n    depth += 1 if c == '(' else -1\n    if depth < 0:\n        print('NO'); break\nelse:\n    print('YES' if depth == 0 else 'NO')\n",
+  "cpuTimeLimitMs": 1000,
+  "memoryLimitMb": 128,
+  "testcases": [
+    { "no": 1, "input": "()\n", "expectedOutput": "YES\n" },
+    { "no": 2, "input": ")(\n", "expectedOutput": "NO\n" },
+    { "no": 3, "input": "(()\n", "expectedOutput": "NO\n" }
+  ],
+  "requestedAt": "2026-11-20T06:08:00Z"
+}

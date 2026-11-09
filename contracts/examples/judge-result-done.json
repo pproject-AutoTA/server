@@ -1,0 +1,13 @@
+{
+  "submissionId": 342,
+  "status": "DONE",
+  "attempt": 1,
+  "workerId": "judge-worker-7c9d4-x2k1p",
+  "judgedAt": "2026-11-20T06:08:04Z",
+  "verdict": "WA",
+  "cases": [
+    { "no": 1, "verdict": "AC", "cpuTimeMs": 20, "memoryKb": 14540, "actualOutput": "YES\n" },
+    { "no": 2, "verdict": "AC", "cpuTimeMs": 18, "memoryKb": 14512, "actualOutput": "NO\n" },
+    { "no": 3, "verdict": "WA", "cpuTimeMs": 21, "memoryKb": 14520, "actualOutput": "YES\n" }
+  ]
+}

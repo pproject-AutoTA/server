@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pproject-AutoTA/server/contracts/lint-result.schema.json",
+  "title": "LintResult",
+  "description": "lint-worker -> result.queue -> core-api (S1). FLAG는 verdict와 별개다.",
+  "type": "object",
+  "required": ["submissionId", "status", "flagged", "findings", "checkedAt"],
+  "properties": {
+    "submissionId": { "type": "integer", "minimum": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["DONE", "SKIPPED"],
+      "description": "SKIPPED: 코드가 파싱되지 않아(SyntaxError) 검사하지 못함. 이때 flagged는 false, findings는 빈 배열"
+    },
+    "flagged": { "type": "boolean", "description": "범위 밖 요소가 하나라도 있으면 true" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "tag"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["BANNED", "NOT_ALLOWED", "MISSING_REQUIRED"] },
+          "tag": { "type": "string", "pattern": "^(import|call|syntax):[A-Za-z_][A-Za-z0-9_.]*$" },
+          "line": { "type": ["integer", "null"], "minimum": 1, "description": "MISSING_REQUIRED는 null" },
+          "col": { "type": ["integer", "null"], "minimum": 0 },
+          "snippet": { "type": "string", "maxLength": 200, "description": "해당 줄 코드. 교수에게만 보인다" }
+        }
+      }
+    },
+    "checkedAt": { "type": "string", "format": "date-time" }
+  },
+  "if": { "properties": { "status": { "const": "SKIPPED" } } },
+  "then": {
+    "properties": {
+      "flagged": { "const": false },
+      "findings": { "maxItems": 0 }
+    }
+  }
+}

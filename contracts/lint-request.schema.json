@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pproject-AutoTA/server/contracts/lint-request.schema.json",
+  "title": "LintRequest",
+  "description": "core-api -> lint.queue -> lint-worker (S1). 허용 요소 검사 요청.",
+  "type": "object",
+  "required": ["submissionId", "problemId", "code", "policy", "requestedAt"],
+  "$defs": {
+    "tag": {
+      "type": "string",
+      "pattern": "^(import|call|syntax):[A-Za-z_][A-Za-z0-9_.]*$",
+      "description": "import:모듈, call:이름, syntax:노드 (기획서 7절)"
+    },
+    "tagList": { "type": "array", "items": { "$ref": "#/$defs/tag" }, "uniqueItems": true }
+  },
+  "properties": {
+    "submissionId": { "type": "integer", "minimum": 1 },
+    "problemId": { "type": "integer", "minimum": 1 },
+    "code": { "type": "string", "maxLength": 65536 },
+    "policy": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["DENYLIST", "ALLOWLIST"] },
+        "banned": { "$ref": "#/$defs/tagList", "description": "DENYLIST에서 금지. call:eval, call:getattr는 lint-worker가 항상 추가한다" },
+        "allowed": { "$ref": "#/$defs/tagList", "description": "ALLOWLIST에서 허용. 기본 허용 집합은 lint-worker가 가진다" },
+        "required": { "$ref": "#/$defs/tagList", "description": "반드시 등장해야 하는 태그" }
+      }
+    },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  }
+}
