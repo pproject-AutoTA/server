@@ -4,7 +4,6 @@ import com.autota.server.global.common.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -71,22 +70,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception e, HttpServletRequest request) {
-        // 404, 405 등 스프링이 상태를 정해 둔 예외는 500으로 바꾸지 않고 그 상태를 유지한다.
-        if (e instanceof ErrorResponse er) {
-            return fromStatus(er.getStatusCode(), request);
+        // 없는 경로·지원하지 않는 메서드 등 스프링이 4xx로 정한 예외는 클라이언트 요청 오류다.
+        // 명세 에러 코드 표에 이 경우의 코드가 없으므로 표에 있는 COMMON-400으로 응답한다(500으로 바꾸지 않는다).
+        if (e instanceof ErrorResponse er && er.getStatusCode().is4xxClientError()) {
+            return build(ErrorCode.INVALID_INPUT, request);
         }
         log.error("처리되지 않은 예외: {} {}", request.getMethod(), request.getRequestURI(), e);
         return build(ErrorCode.INTERNAL_ERROR, request);
-    }
-
-    private ResponseEntity<ApiErrorResponse> fromStatus(HttpStatusCode status, HttpServletRequest request) {
-        return switch (status.value()) {
-            case 400 -> build(ErrorCode.INVALID_INPUT, request);
-            case 404 -> build(ErrorCode.NOT_FOUND, request);
-            case 405 -> build(ErrorCode.METHOD_NOT_ALLOWED, request);
-            default -> ResponseEntity.status(status).body(
-                    ApiErrorResponse.of("COMMON-" + status.value(), "요청을 처리할 수 없습니다", request.getRequestURI()));
-        };
     }
 
     private ResponseEntity<ApiErrorResponse> build(ErrorCode code, HttpServletRequest request) {

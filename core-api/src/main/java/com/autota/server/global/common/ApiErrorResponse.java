@@ -4,6 +4,7 @@ import com.autota.server.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -21,11 +22,13 @@ public record ApiErrorResponse(
 ) {
     /** 서버 기본 시간대와 무관하게 같은 값이 나오도록 고정한다. */
     private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
+    /** 명세 예시 형식(2026-11-07T12:34:56.789). 초·밀리초가 0이어도 자릿수를 유지한다. */
+    private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     public record FieldError(String field, Object rejectedValue, String reason) {}
 
     private static String now() {
-        return LocalDateTime.now(ZONE).toString();
+        return LocalDateTime.now(ZONE).format(FORMAT);
     }
 
     /** ErrorCode에 없는 상태(404, 405 등)를 그대로 내려줄 때 */

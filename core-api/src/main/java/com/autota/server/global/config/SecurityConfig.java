@@ -8,6 +8,7 @@ import com.autota.server.domain.auth.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,7 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity // 학생 전용 API처럼 한 단계 더 좁은 검사는 컨트롤러의 @PreAuthorize로
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtProvider jwtProvider;
@@ -45,9 +46,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/login", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/v1/professor/**").hasRole(Role.PROFESSOR.name())
                         .requestMatchers("/api/v1/admin/**").hasRole(Role.ADMIN.name())
-                        // 그 외 API는 학생·교수 공통(관리자는 COMMON-403). 참여·소유 확인은 서비스에서 한다.
-                        .requestMatchers("/api/v1/**").hasAnyRole(Role.STUDENT.name(), Role.PROFESSOR.name())
-                        .anyRequest().authenticated())
+                        // 학생 전용 API는 경로를 하나씩 지정한다. /problems/** 처럼 묶으면
+                        // 나중에 같은 경로 아래 공통 API가 생겼을 때 교수가 막힌다.
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/enrollments",
+                                "/api/v1/problems/*/submissions").hasRole(Role.STUDENT.name())
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/problems/*",
+                                "/api/v1/problems/*/submissions/me",
+                                "/api/v1/submissions/me/*").hasRole(Role.STUDENT.name())
+                        // 그 외는 학생·교수 공통(관리자는 COMMON-403). 참여·소유 확인은 서비스에서 한다.
+                        .anyRequest().hasAnyRole(Role.STUDENT.name(), Role.PROFESSOR.name()))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

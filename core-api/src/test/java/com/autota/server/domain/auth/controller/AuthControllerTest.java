@@ -26,6 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -92,6 +93,38 @@ class AuthControllerTest {
         String byId(@PathVariable Long id) {
             return "ok";
         }
+
+        // 학생 전용 경로 (SecurityConfig에서 메서드+경로로 지정)
+        @PostMapping("/enrollments")
+        String enroll() {
+            return "ok";
+        }
+
+        @PostMapping("/problems/{id}/submissions")
+        String submit(@PathVariable Long id) {
+            return "ok";
+        }
+
+        @GetMapping("/problems/{id}")
+        String problem(@PathVariable Long id) {
+            return "ok";
+        }
+
+        @GetMapping("/problems/{id}/submissions/me")
+        String mySubmissions(@PathVariable Long id) {
+            return "ok";
+        }
+
+        @GetMapping("/submissions/me/{id}")
+        String mySubmission(@PathVariable Long id) {
+            return "ok";
+        }
+
+        /** 학생 전용 경로와 접두어가 같지만 공통인 경로 */
+        @GetMapping("/problems/{id}/common-probe")
+        String problemCommon(@PathVariable Long id) {
+            return "ok";
+        }
     }
 
     @TestConfiguration
@@ -155,7 +188,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data").value(nullValue()))
                 .andExpect(jsonPath("$.errors").value(nullValue())) // 검증 에러가 아니면 errors는 null
                 .andExpect(jsonPath("$.path").value(LOGIN))
-                .andExpect(jsonPath("$.timestamp", matchesPattern("\\d{4}-\\d{2}-\\d{2}T.+")));
+                .andExpect(jsonPath("$.timestamp", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}")));
     }
 
     @Test
@@ -281,6 +314,34 @@ class AuthControllerTest {
     }
 
     @Test
+    void 학생_전용_경로는_학생만_통과하고_교수와_관리자는_403() throws Exception {
+        String[][] studentOnly = {
+                {"POST", "/api/v1/enrollments"},
+                {"POST", "/api/v1/problems/1/submissions"},
+                {"GET", "/api/v1/problems/1"},
+                {"GET", "/api/v1/problems/1/submissions/me"},
+                {"GET", "/api/v1/submissions/me/1"},
+        };
+        for (String[] api : studentOnly) {
+            var student = "POST".equals(api[0]) ? post(api[1]) : get(api[1]);
+            mockMvc.perform(student.header("Authorization", bearer(1L, Role.STUDENT)))
+                    .andExpect(status().isOk());
+            for (Role other : new Role[]{Role.PROFESSOR, Role.ADMIN}) {
+                var req = "POST".equals(api[0]) ? post(api[1]) : get(api[1]);
+                mockMvc.perform(req.header("Authorization", bearer(2L, other)))
+                        .andExpect(status().isForbidden())
+                        .andExpect(jsonPath("$.code").value("COMMON-403"));
+            }
+        }
+    }
+
+    @Test
+    void 학생_전용과_접두어가_같아도_다른_경로는_교수도_통과한다() throws Exception {
+        mockMvc.perform(get("/api/v1/problems/1/common-probe").header("Authorization", bearer(2L, Role.PROFESSOR)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void 토큰이_없으면_경로별_권한_검사보다_먼저_401() throws Exception {
         mockMvc.perform(get("/api/v1/admin/probe"))
                 .andExpect(status().isUnauthorized())
@@ -299,14 +360,15 @@ class AuthControllerTest {
     }
 
     @Test
-    void 없는_경로는_404_잘못된_메서드는_405를_유지한다() throws Exception {
+    void 없는_경로와_잘못된_메서드는_명세_표의_COMMON_400으로_응답한다() throws Exception {
         mockMvc.perform(get("/api/v1/nothing").header("Authorization", bearer(1L, Role.STUDENT)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("COMMON-404"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON-400"))
+                .andExpect(jsonPath("$.errors").value(nullValue()));
 
         mockMvc.perform(get(LOGIN).header("Authorization", bearer(1L, Role.STUDENT)))
-                .andExpect(status().isMethodNotAllowed())
-                .andExpect(jsonPath("$.code").value("COMMON-405"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON-400"));
     }
 
     // ---- CORS ----
