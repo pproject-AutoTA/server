@@ -56,14 +56,12 @@ class AuthServiceTest {
     }
 
     @Test
-    void 이메일은_공백과_대소문자를_정규화해서_조회한다() {
-        when(userRepository.findByEmail("kim@univ.ac.kr"))
-                .thenReturn(Optional.of(user(7L, "kim@univ.ac.kr", "pw1234", Role.STUDENT, null)));
+    void 이메일은_입력값_그대로_조회한다() {
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        LoginResponse res = authService.login("  Kim@Univ.AC.kr ", "pw1234");
-
-        assertThat(res.user().id()).isEqualTo(7L);
-        verify(userRepository).findByEmail("kim@univ.ac.kr");
+        assertThatThrownBy(() -> authService.login("Kim@Univ.AC.kr", "pw1234"))
+                .isInstanceOf(BusinessException.class);
+        verify(userRepository).findByEmail("Kim@Univ.AC.kr");
     }
 
     @Test

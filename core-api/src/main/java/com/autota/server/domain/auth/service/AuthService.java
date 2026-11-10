@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.Optional;
 
 @Slf4j
@@ -37,12 +36,11 @@ public class AuthService {
 
     /** 이메일·비밀번호 중 무엇이 틀렸는지 구분하지 않고 AUTH-003으로 응답한다. 역할은 DB의 users.role을 쓴다. */
     public LoginResponse login(String email, String password) {
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        Optional<User> found = userRepository.findByEmail(normalizedEmail);
+        Optional<User> found = userRepository.findByEmail(email);
 
         boolean passwordMatches = passwordMatches(password, found.map(User::getPasswordHash).orElse(dummyHash));
         if (found.isEmpty() || !passwordMatches) {
-            log.warn("로그인 실패: email={}, reason={}", normalizedEmail, failureReason(found, passwordMatches));
+            log.warn("로그인 실패: email={}, reason={}", email, failureReason(found, passwordMatches));
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
 

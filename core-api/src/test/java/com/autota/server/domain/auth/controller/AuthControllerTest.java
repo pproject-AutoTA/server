@@ -168,7 +168,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.errors", hasSize(2)))
                 .andExpect(jsonPath("$.errors[0]", allOf(hasKey("field"), hasKey("rejectedValue"), hasKey("reason"))))
                 .andExpect(jsonPath("$.errors[*].field", hasItem("email")))
-                .andExpect(jsonPath("$.errors[*].reason", hasItem("이메일 형식이 올바르지 않습니다")))
+                .andExpect(jsonPath("$.errors[*].reason", hasItem("올바른 이메일 형식이 아닙니다.")))
                 .andExpect(jsonPath("$.errors[*].reason", hasItem("비밀번호는 필수입니다")))
                 .andExpect(jsonPath("$.errors[*].field", hasItem("password")));
     }
