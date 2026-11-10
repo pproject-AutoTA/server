@@ -10,7 +10,8 @@ import java.math.RoundingMode;
 
 /** 테스트케이스 그룹 (S2). 그룹마다 배점과 채점 방식을 가진다. */
 @Entity
-@Table(name = "testcase_groups")
+@Table(name = "testcase_groups",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"id", "problem_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TestcaseGroup {
@@ -26,10 +27,10 @@ public class TestcaseGroup {
     @Column(name = "order_no", nullable = false)
     private int orderNo;
 
-    @Column(nullable = false)
+    @Column
     private String name;
 
-    @Column(nullable = false, precision = 6, scale = 2)
+    @Column(name = "score", nullable = false, precision = 5, scale = 2)
     private BigDecimal points;
 
     @Enumerated(EnumType.STRING)

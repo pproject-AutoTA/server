@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 /** 테스트케이스 (M3). 공개/비공개. 그룹은 S2부터 (없어도 된다). */
 @Entity
-@Table(name = "testcases")
+@Table(name = "testcases",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"problem_id", "order_no"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Testcase {
@@ -20,8 +21,8 @@ public class Testcase {
     @JoinColumn(name = "problem_id", nullable = false)
     private Problem problem;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "group_id", nullable = false)
     private TestcaseGroup group;
 
     @Column(name = "order_no", nullable = false)

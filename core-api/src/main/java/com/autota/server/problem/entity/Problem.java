@@ -37,8 +37,14 @@ public class Problem {
     @Column(nullable = false)
     private String description;
 
+    @Column(name = "input_format", nullable = false)
+    private String inputFormat;
+
+    @Column(name = "output_format", nullable = false)
+    private String outputFormat;
+
     /** CPU 시간 기준 (100 ~ 60000) */
-    @Column(name = "time_limit_ms", nullable = false)
+    @Column(name = "cpu_time_limit_ms", nullable = false)
     private int timeLimitMs = 2000;
 
     @Column(name = "memory_limit_mb", nullable = false)
@@ -46,6 +52,10 @@ public class Problem {
 
     @Column(name = "allow_resubmit", nullable = false)
     private boolean allowResubmit = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProblemStatus status = ProblemStatus.PUBLISHED;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "lint_mode", nullable = false)
@@ -71,11 +81,13 @@ public class Problem {
     private List<ProblemLintRule> lintRules = new ArrayList<>();
 
     public Problem(Assignment assignment, int orderNo, String title, String description,
-                   int timeLimitMs, int memoryLimitMb, boolean allowResubmit) {
+                   String inputFormat, String outputFormat, int timeLimitMs, int memoryLimitMb, boolean allowResubmit) {
         this.assignment = assignment;
         this.orderNo = orderNo;
         this.title = title;
         this.description = description;
+        this.inputFormat = inputFormat;
+        this.outputFormat = outputFormat;
         this.timeLimitMs = timeLimitMs;
         this.memoryLimitMb = memoryLimitMb;
         this.allowResubmit = allowResubmit;
