@@ -4,6 +4,7 @@ import com.autota.server.global.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 /** data는 항상 포함(없으면 null), 나머지 null 필드는 생략한다. */
@@ -16,10 +17,22 @@ public record ApiResponse<T>(
         @JsonInclude(JsonInclude.Include.NON_NULL) String path,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<FieldError> errors
 ) {
+    /** 서버 기본 시간대와 무관하게 같은 값이 나오도록 고정한다. */
+    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
+
     public record FieldError(String field, Object rejectedValue, String reason) {}
+
+    private static String now() {
+        return LocalDateTime.now(ZONE).toString();
+    }
 
     public static <T> ApiResponse<T> ok(T data) {
         return new ApiResponse<>(true, "COMMON-200", "요청에 성공했습니다.", data, null, null, null);
+    }
+
+    /** 반환할 데이터가 없는 성공 (data: null) */
+    public static ApiResponse<Void> ok() {
+        return new ApiResponse<>(true, "COMMON-200", "요청에 성공했습니다.", null, null, null, null);
     }
 
     public static <T> ApiResponse<T> created(T data) {
@@ -32,7 +45,7 @@ public record ApiResponse<T>(
 
     /** ErrorCode에 없는 상태(404, 405 등)를 그대로 내려줄 때 */
     public static ApiResponse<Void> fail(String code, String message, String path) {
-        return new ApiResponse<>(false, code, message, null, LocalDateTime.now().toString(), path, null);
+        return new ApiResponse<>(false, code, message, null, now(), path, null);
     }
 
     public static ApiResponse<Void> fail(ErrorCode errorCode, String path) {
@@ -40,7 +53,6 @@ public record ApiResponse<T>(
     }
 
     public static ApiResponse<Void> fail(ErrorCode errorCode, String path, List<FieldError> errors) {
-        return new ApiResponse<>(false, errorCode.getCode(), errorCode.getMessage(), null,
-                LocalDateTime.now().toString(), path, errors);
+        return new ApiResponse<>(false, errorCode.getCode(), errorCode.getMessage(), null, now(), path, errors);
     }
 }

@@ -6,6 +6,8 @@ public enum ErrorCode {
     COMMON_400(HttpStatus.BAD_REQUEST, "COMMON-400", "입력값이 올바르지 않습니다"),
     COMMON_401(HttpStatus.UNAUTHORIZED, "COMMON-401", "인증이 필요합니다"),
     COMMON_403(HttpStatus.FORBIDDEN, "COMMON-403", "권한이 없습니다"),
+    COMMON_404(HttpStatus.NOT_FOUND, "COMMON-404", "요청한 경로를 찾을 수 없습니다"),
+    COMMON_405(HttpStatus.METHOD_NOT_ALLOWED, "COMMON-405", "지원하지 않는 요청 방식입니다"),
     COMMON_500(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON-500", "서버 오류입니다"),
 
     AUTH_001(HttpStatus.UNAUTHORIZED, "AUTH-001", "유효하지 않은 토큰입니다"),
