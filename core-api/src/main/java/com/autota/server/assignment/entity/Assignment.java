@@ -35,6 +35,10 @@ public class Assignment {
     @Column(name = "due_at", nullable = false)
     private Instant dueAt;
 
+    /** C1. 값이 있으면 마감 후 제출을 받고 감점한다. */
+    @Column(name = "late_penalty_rate", precision = 5, scale = 2)
+    private java.math.BigDecimal latePenaltyRate;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "score_release", nullable = false)
     private ScoreRelease scoreRelease = ScoreRelease.HIDDEN;
