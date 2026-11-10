@@ -20,10 +20,10 @@ public record ApiResponse<T>(
     }
 
     public static <T> ApiResponse<T> created(T data) {
-        return new ApiResponse<>(true, "COMMON-201", "생성되었습니다.", data);
+        return new ApiResponse<>(true, "COMMON-201", "요청에 성공했습니다.", data);
     }
 
     public static <T> ApiResponse<T> accepted(T data) {
-        return new ApiResponse<>(true, "COMMON-202", "요청이 접수되었습니다.", data);
+        return new ApiResponse<>(true, "COMMON-202", "요청에 성공했습니다.", data);
     }
 }
