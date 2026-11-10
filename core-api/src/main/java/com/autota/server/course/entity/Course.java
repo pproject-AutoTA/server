@@ -27,10 +27,10 @@ public class Course {
     private User professor;
 
     @Column(nullable = false)
-    private String title;
+    private String name;
 
     /** 형식 DS-7K92-QX */
-    @Column(name = "join_code", nullable = false, unique = true)
+    @Column(name = "join_code", nullable = false, unique = true, length = 16)
     private String joinCode;
 
     @Column(nullable = false)
@@ -40,12 +40,12 @@ public class Course {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public Course(User professor, String title, String joinCode, String semester) {
+    public Course(User professor, String name, String joinCode, String semester) {
         if (!professor.is(Role.PROFESSOR)) {
             throw new IllegalArgumentException("수업은 교수만 만들 수 있습니다");
         }
         this.professor = professor;
-        this.title = title;
+        this.name = name;
         this.joinCode = joinCode;
         this.semester = semester;
     }
@@ -55,16 +55,16 @@ public class Course {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /** 새 수업 생성. 참여 코드는 자동으로 만든다. */
-    public static Course create(User professor, String title, String semester) {
-        return new Course(professor, title, generateJoinCode(), semester);
+    public static Course create(User professor, String name, String semester) {
+        return new Course(professor, name, generateJoinCode(), semester);
     }
 
     /** 참여 코드를 지정해 수업 생성. 형식(DS-7K92-QX)이 아니면 예외. */
-    public static Course create(User professor, String title, String joinCode, String semester) {
+    public static Course create(User professor, String name, String joinCode, String semester) {
         if (joinCode == null || !joinCode.matches("^[A-Z]{2}-[A-Z0-9]{4}-[A-Z]{2}$")) {
             throw new IllegalArgumentException("참여 코드 형식이 올바르지 않습니다");
         }
-        return new Course(professor, title, joinCode, semester);
+        return new Course(professor, name, joinCode, semester);
     }
 
     /** 참여 코드 생성. 형식은 DS-7K92-QX (영문 2자 - 영문·숫자 4자 - 영문 2자). */

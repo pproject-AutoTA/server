@@ -2,19 +2,19 @@ package com.autota.server.course.service;
 
 import com.autota.server.assignment.service.AssignmentService;
 import com.autota.server.auth.entity.User;
-import com.autota.server.auth.repository.UserRepository;
+import com.autota.server.auth.service.UserService;
 import com.autota.server.course.dto.EnrolledCourseResponse;
 import com.autota.server.course.dto.JoinCourseResponse;
 import com.autota.server.course.dto.OwnedCourseResponse;
 import com.autota.server.course.entity.Course;
 import com.autota.server.course.entity.Enrollment;
-import com.autota.server.course.entity.EnrollmentId;
 import com.autota.server.course.repository.CourseRepository;
 import com.autota.server.course.repository.CourseStudentCount;
 import com.autota.server.course.repository.EnrollmentRepository;
 import com.autota.server.global.exception.BusinessException;
 import com.autota.server.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,16 +30,16 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final AssignmentService assignmentService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     /** 수업 개설. 참여 코드는 서버가 만든다. */
     @Transactional
-    public Course createCourse(Long professorId, String title, String semester) {
-        User professor = userRepository.findById(professorId).orElseThrow();
+    public Course createCourse(Long professorId, String name, String semester) {
+        User professor = userService.getById(professorId);
 
-        Course course = Course.create(professor, title, semester);
+        Course course = Course.create(professor, name, semester);
         while (courseRepository.existsByJoinCode(course.getJoinCode())) {
-            course = Course.create(professor, title, semester); // 중복이면 다시 생성
+            course = Course.create(professor, name, semester); // 중복이면 다시 생성
         }
         return courseRepository.save(course);
     }
@@ -52,14 +52,20 @@ public class CourseService {
         Course course = courseRepository.findByJoinCodeWithProfessor(joinCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.JOIN_CODE_NOT_FOUND));
 
-        if (enrollmentRepository.existsById(EnrollmentId.of(course.getId(), studentId))) {
+        if (enrollmentRepository.existsByCourseIdAndStudentId(course.getId(), studentId)) {
             throw new BusinessException(ErrorCode.ALREADY_ENROLLED);
         }
 
-        User student = userRepository.findById(studentId).orElseThrow();
-        Enrollment enrollment = enrollmentRepository.save(Enrollment.join(course, student));
+        User student = userService.getById(studentId);
+        Enrollment enrollment;
+        try {
+            // 동시 요청으로 existsBy 확인을 함께 통과해도 UNIQUE(course_id, student_id)가 막는다.
+            enrollment = enrollmentRepository.saveAndFlush(Enrollment.join(course, student));
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.ALREADY_ENROLLED);
+        }
 
-        Instant joinedAt = enrollment.getJoinedAt() != null ? enrollment.getJoinedAt() : Instant.now();
+        Instant joinedAt = enrollment.getCreatedAt() != null ? enrollment.getCreatedAt() : Instant.now();
         return JoinCourseResponse.of(course, course.getProfessor().getUsername(), joinedAt);
     }
 

@@ -18,7 +18,7 @@ public record JoinCourseResponse(
     public static JoinCourseResponse of(Course course, String professorName, Instant joinedAt) {
         return new JoinCourseResponse(
                 course.getId(),
-                course.getTitle(),
+                course.getName(),
                 course.getSemester(),
                 professorName,
                 LocalDateTime.ofInstant(joinedAt, ZONE)

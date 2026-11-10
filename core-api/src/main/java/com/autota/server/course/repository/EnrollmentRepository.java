@@ -2,7 +2,6 @@ package com.autota.server.course.repository;
 
 import com.autota.server.course.entity.Course;
 import com.autota.server.course.entity.Enrollment;
-import com.autota.server.course.entity.EnrollmentId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,11 +9,13 @@ import org.springframework.data.repository.query.Param;
 import java.util.Collection;
 import java.util.List;
 
-public interface EnrollmentRepository extends JpaRepository<Enrollment, EnrollmentId> {
+public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+
+    boolean existsByCourseIdAndStudentId(Long courseId, Long studentId);
 
     /** 학생이 참여 중인 수업(교수 포함). 학기 내림차순, 이름 오름차순. */
     @Query("select c from Enrollment e join e.course c join fetch c.professor "
-            + "where e.student.id = :studentId order by c.semester desc, c.title asc")
+            + "where e.student.id = :studentId order by c.semester desc, c.name asc")
     List<Course> findCoursesByStudentId(@Param("studentId") Long studentId);
 
     @Query("select count(e) from Enrollment e where e.course.id = :courseId")

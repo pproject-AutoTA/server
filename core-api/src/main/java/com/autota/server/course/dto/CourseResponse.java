@@ -18,7 +18,7 @@ public record CourseResponse(
     public static CourseResponse of(Course course, long studentCount) {
         return new CourseResponse(
                 course.getId(),
-                course.getTitle(),
+                course.getName(),
                 course.getSemester(),
                 course.getJoinCode(),
                 studentCount,

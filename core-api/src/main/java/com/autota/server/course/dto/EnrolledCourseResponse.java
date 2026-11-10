@@ -14,7 +14,7 @@ public record EnrolledCourseResponse(
     public static EnrolledCourseResponse of(Course course, String professorName, long studentCount, long assignmentCount) {
         return new EnrolledCourseResponse(
                 course.getId(),
-                course.getTitle(),
+                course.getName(),
                 course.getSemester(),
                 professorName,
                 Math.toIntExact(studentCount),

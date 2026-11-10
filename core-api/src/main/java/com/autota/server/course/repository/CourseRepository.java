@@ -16,6 +16,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Optional<Course> findByJoinCodeWithProfessor(@Param("joinCode") String joinCode);
 
     /** 교수의 개설 수업. 학기 내림차순, 이름 오름차순. */
-    @Query("select c from Course c where c.professor.id = :professorId order by c.semester desc, c.title asc")
+    @Query("select c from Course c where c.professor.id = :professorId order by c.semester desc, c.name asc")
     List<Course> findOwned(@Param("professorId") Long professorId);
 }

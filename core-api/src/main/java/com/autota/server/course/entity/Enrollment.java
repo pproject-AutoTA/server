@@ -10,31 +10,31 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 
-/** 수업 참여 (M2). 학생이 참여 코드로 들어오면 1줄 생긴다. */
+/** 수업 참여 (M2). 학생이 참여 코드로 들어오면 1줄 생긴다. 참여 시각 = created_at. */
 @Entity
-@Table(name = "enrollments")
+@Table(name = "enrollments",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"course_id", "student_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Enrollment {
 
-    @EmbeddedId
-    private EnrollmentId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @MapsId("courseId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "course_id")
+    @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @MapsId("studentId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "student_id")
+    @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
     @CreationTimestamp
-    @Column(name = "joined_at", nullable = false, updatable = false)
-    private Instant joinedAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
-    /** 학생이 수업에 참여. 수업이 저장돼 id가 있어야 한다. */
+    /** 학생이 수업에 참여. */
     public static Enrollment join(Course course, User student) {
         return new Enrollment(course, student);
     }
@@ -43,7 +43,6 @@ public class Enrollment {
         if (!student.is(Role.STUDENT)) {
             throw new IllegalArgumentException("학생만 수업에 참여할 수 있습니다");
         }
-        this.id = EnrollmentId.of(course.getId(), student.getId());
         this.course = course;
         this.student = student;
     }

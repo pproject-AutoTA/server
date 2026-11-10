@@ -14,7 +14,7 @@ public record OwnedCourseResponse(
     public static OwnedCourseResponse of(Course course, long studentCount, long assignmentCount) {
         return new OwnedCourseResponse(
                 course.getId(),
-                course.getTitle(),
+                course.getName(),
                 course.getSemester(),
                 course.getJoinCode(),
                 Math.toIntExact(studentCount),
