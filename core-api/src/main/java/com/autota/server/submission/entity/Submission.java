@@ -18,7 +18,10 @@ import java.util.List;
  *   NOT_ENROLLED / DEADLINE_PASSED / RESUBMIT_NOT_ALLOWED
  */
 @Entity
-@Table(name = "submissions")
+@Table(name = "submissions",
+        indexes = @Index(name = "idx_submissions_problem_student_submitted",
+                columnList = "problem_id, student_id, submitted_at DESC"),
+        check = @CheckConstraint(constraint = "octet_length(code) <= 65536"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Submission {
@@ -42,7 +45,7 @@ public class Submission {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SubmissionStatus status = SubmissionStatus.QUEUED;
+    private SubmissionStatus status = SubmissionStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
     private Verdict verdict;
@@ -50,8 +53,16 @@ public class Submission {
     @Column(name = "passed_count")
     private Integer passedCount;
 
-    @Column(name = "total_count")
-    private Integer totalCount;
+    @Column(name = "hidden_passed_count")
+    private Integer hiddenPassedCount;
+
+    /** 케이스 중 최댓값 (API executionTimeMs) */
+    @Column(name = "cpu_time_ms")
+    private Integer cpuTimeMs;
+
+    /** 케이스 중 최댓값 */
+    @Column(name = "memory_kb")
+    private Integer memoryKb;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "lint_status", nullable = false)
@@ -88,18 +99,21 @@ public class Submission {
 
     public SubmissionCaseResult addCaseResult(com.autota.server.problem.entity.Testcase testcase, Verdict verdict,
                                               Integer cpuTimeMs, Integer memoryKb,
-                                              String stdoutHead, String stderrHead) {
-        SubmissionCaseResult r = new SubmissionCaseResult(this, testcase, verdict, cpuTimeMs, memoryKb, stdoutHead, stderrHead);
+                                              String actualOutput) {
+        SubmissionCaseResult r = new SubmissionCaseResult(this, testcase, verdict, cpuTimeMs, memoryKb, actualOutput);
         caseResults.add(r);
         return r;
     }
 
     /** 전체 판정: 모두 AC면 AC, 아니면 처음 실패한 케이스의 판정 (6절) */
-    public void complete(Verdict overall, int passed, int total, Instant now) {
+    public void complete(Verdict overall, int passed, int hiddenPassed,
+                         Integer cpuTimeMs, Integer memoryKb, Instant now) {
         this.status = SubmissionStatus.DONE;
         this.verdict = overall;
         this.passedCount = passed;
-        this.totalCount = total;
+        this.hiddenPassedCount = hiddenPassed;
+        this.cpuTimeMs = cpuTimeMs;
+        this.memoryKb = memoryKb;
         this.judgedAt = now;
     }
 
