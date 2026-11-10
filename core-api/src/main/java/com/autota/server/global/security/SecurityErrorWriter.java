@@ -1,6 +1,6 @@
 package com.autota.server.global.security;
 
-import com.autota.server.global.common.ApiResponse;
+import com.autota.server.global.common.ApiErrorResponse;
 import com.autota.server.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,7 +19,7 @@ public class SecurityErrorWriter {
     public void write(HttpServletRequest request, HttpServletResponse response, ErrorCode code) throws IOException {
         response.setStatus(code.getStatus().value());
         response.setContentType("application/json;charset=UTF-8");
-        ApiResponse<Void> body = ApiResponse.fail(code, request.getRequestURI());
+        ApiErrorResponse body = ApiErrorResponse.of(code, request.getRequestURI());
         response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 }
