@@ -1,4 +1,4 @@
-package com.autota.server.problem;
+package com.autota.server.global.exception;
 
 public class BusinessException extends RuntimeException {
     private final ErrorCode errorCode;

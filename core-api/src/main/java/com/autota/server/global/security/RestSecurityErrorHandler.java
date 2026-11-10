@@ -1,7 +1,7 @@
-package com.autota.server.auth.jwt;
+package com.autota.server.global.security;
 
-import com.autota.server.problem.BusinessException;
-import com.autota.server.problem.ErrorCode;
+import com.autota.server.global.exception.BusinessException;
+import com.autota.server.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;

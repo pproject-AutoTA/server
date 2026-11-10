@@ -1,8 +1,8 @@
-package com.autota.server.auth.config;
+package com.autota.server.global.config;
 
-import com.autota.server.auth.jwt.JwtAuthenticationFilter;
+import com.autota.server.global.security.JwtAuthenticationFilter;
 import com.autota.server.auth.jwt.JwtProvider;
-import com.autota.server.auth.jwt.RestSecurityErrorHandler;
+import com.autota.server.global.security.RestSecurityErrorHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

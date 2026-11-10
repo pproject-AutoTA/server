@@ -1,4 +1,4 @@
-package com.autota.server.problem;
+package com.autota.server.global.exception;
 
 import org.springframework.http.HttpStatus;
 

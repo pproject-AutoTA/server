@@ -3,7 +3,7 @@ package com.autota.server.auth.controller;
 import com.autota.server.auth.dto.LoginRequest;
 import com.autota.server.auth.dto.LoginResponse;
 import com.autota.server.auth.service.AuthService;
-import com.autota.server.problem.ApiResponse;
+import com.autota.server.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;

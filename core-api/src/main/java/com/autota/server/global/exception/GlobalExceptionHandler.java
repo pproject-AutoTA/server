@@ -1,5 +1,6 @@
-package com.autota.server.problem;
+package com.autota.server.global.exception;
 
+import com.autota.server.global.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

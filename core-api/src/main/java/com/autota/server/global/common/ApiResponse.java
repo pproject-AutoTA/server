@@ -1,5 +1,6 @@
-package com.autota.server.problem;
+package com.autota.server.global.common;
 
+import com.autota.server.global.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.LocalDateTime;

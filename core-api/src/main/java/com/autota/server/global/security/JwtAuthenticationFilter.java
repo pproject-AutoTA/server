@@ -1,6 +1,7 @@
-package com.autota.server.auth.jwt;
+package com.autota.server.global.security;
 
-import com.autota.server.problem.ErrorCode;
+import com.autota.server.auth.jwt.JwtProvider;
+import com.autota.server.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
