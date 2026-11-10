@@ -14,8 +14,21 @@ public enum ErrorCode {
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH-002", "만료된 토큰입니다"),
 
     // 수업
-    COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "COURSE-002", "참여 코드에 해당하는 수업이 없습니다"),
-    ALREADY_ENROLLED(HttpStatus.CONFLICT, "COURSE-003", "이미 참여한 수업입니다");
+    COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "COURSE-001", "수업을 찾을 수 없습니다"),
+    JOIN_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "COURSE-002", "참여 코드에 해당하는 수업이 없습니다"),
+    ALREADY_ENROLLED(HttpStatus.CONFLICT, "COURSE-003", "이미 참여한 수업입니다"),
+    COURSE_FORBIDDEN(HttpStatus.FORBIDDEN, "COURSE-004", "해당 수업에 대한 권한이 없습니다"),
+
+    // 과제·문제
+    ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ASSIGNMENT-001", "과제를 찾을 수 없습니다"),
+    PROBLEM_NOT_FOUND(HttpStatus.NOT_FOUND, "PROBLEM-001", "문제를 찾을 수 없습니다"),
+
+    // 제출
+    SUBMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBMISSION-001", "제출을 찾을 수 없습니다"),
+    DEADLINE_PASSED(HttpStatus.CONFLICT, "SUBMISSION-002", "마감이 지났습니다"),
+    RESUBMIT_NOT_ALLOWED(HttpStatus.CONFLICT, "SUBMISSION-003", "재제출할 수 없는 문제입니다"),
+    CODE_TOO_LARGE(HttpStatus.BAD_REQUEST, "SUBMISSION-004", "코드가 너무 큽니다"),
+    SUBMISSION_FORBIDDEN(HttpStatus.FORBIDDEN, "SUBMISSION-005", "해당 제출에 대한 권한이 없습니다");
 
     private final HttpStatus status;
     private final String code;

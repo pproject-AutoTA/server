@@ -50,7 +50,7 @@ public class CourseService {
         String joinCode = rawJoinCode.trim().toUpperCase(Locale.ROOT);
 
         Course course = courseRepository.findByJoinCodeWithProfessor(joinCode)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.JOIN_CODE_NOT_FOUND));
 
         if (enrollmentRepository.existsById(EnrollmentId.of(course.getId(), studentId))) {
             throw new BusinessException(ErrorCode.ALREADY_ENROLLED);

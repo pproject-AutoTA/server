@@ -42,6 +42,11 @@ public record ApiResponse<T>(
         return new ApiResponse<>(true, "COMMON-201", SUCCESS_MESSAGE, data, null, null, null);
     }
 
+    /** 비동기 접수 성공 (COMMON-202). 코드 제출 */
+    public static <T> ApiResponse<T> accepted(T data) {
+        return new ApiResponse<>(true, "COMMON-202", SUCCESS_MESSAGE, data, null, null, null);
+    }
+
     /** 실패 (data: null) */
     public static <T> ApiResponse<T> fail(String code, String message, String path) {
         return new ApiResponse<>(false, code, message, null, LocalDateTime.now(), path, null);

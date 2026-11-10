@@ -179,7 +179,7 @@ class CourseControllerTest {
     @Test
     void 없는_참여_코드면_404_COURSE_002() throws Exception {
         when(courseService.joinCourse(any(), any()))
-                .thenThrow(new BusinessException(ErrorCode.COURSE_NOT_FOUND));
+                .thenThrow(new BusinessException(ErrorCode.JOIN_CODE_NOT_FOUND));
 
         mockMvc.perform(post("/api/v1/enrollments")
                         .header("Authorization", bearer(1L, Role.STUDENT))
