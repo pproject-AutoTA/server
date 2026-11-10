@@ -1,6 +1,6 @@
-package com.autota.server.auth.dto;
+package com.autota.server.domain.auth.dto;
 
-import com.autota.server.auth.entity.Role;
+import com.autota.server.domain.auth.entity.Role;
 
 public record LoginResponse(
         String accessToken,

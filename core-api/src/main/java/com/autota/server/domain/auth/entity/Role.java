@@ -1,4 +1,4 @@
-package com.autota.server.auth.entity;
+package com.autota.server.domain.auth.entity;
 
 public enum Role {
     STUDENT,

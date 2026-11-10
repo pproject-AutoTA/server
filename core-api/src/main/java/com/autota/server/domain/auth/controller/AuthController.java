@@ -1,8 +1,8 @@
-package com.autota.server.auth.controller;
+package com.autota.server.domain.auth.controller;
 
-import com.autota.server.auth.dto.LoginRequest;
-import com.autota.server.auth.dto.LoginResponse;
-import com.autota.server.auth.service.AuthService;
+import com.autota.server.domain.auth.dto.LoginRequest;
+import com.autota.server.domain.auth.dto.LoginResponse;
+import com.autota.server.domain.auth.service.AuthService;
 import com.autota.server.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

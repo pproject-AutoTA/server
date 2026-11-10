@@ -1,9 +1,9 @@
-package com.autota.server.auth.controller;
+package com.autota.server.domain.auth.controller;
 
-import com.autota.server.auth.dto.LoginResponse;
-import com.autota.server.auth.entity.Role;
-import com.autota.server.auth.jwt.JwtProvider;
-import com.autota.server.auth.service.AuthService;
+import com.autota.server.domain.auth.dto.LoginResponse;
+import com.autota.server.domain.auth.entity.Role;
+import com.autota.server.domain.auth.jwt.JwtProvider;
+import com.autota.server.domain.auth.service.AuthService;
 import com.autota.server.global.config.CorsConfig;
 import com.autota.server.global.config.SecurityConfig;
 import com.autota.server.global.exception.BusinessException;
