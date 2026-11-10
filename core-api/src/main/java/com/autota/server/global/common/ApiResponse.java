@@ -30,6 +30,11 @@ public record ApiResponse<T>(
         return new ApiResponse<>(true, "COMMON-202", "요청이 접수되었습니다.", data, null, null, null);
     }
 
+    /** ErrorCode에 없는 상태(404, 405 등)를 그대로 내려줄 때 */
+    public static ApiResponse<Void> fail(String code, String message, String path) {
+        return new ApiResponse<>(false, code, message, null, LocalDateTime.now().toString(), path, null);
+    }
+
     public static ApiResponse<Void> fail(ErrorCode errorCode, String path) {
         return fail(errorCode, path, null);
     }
