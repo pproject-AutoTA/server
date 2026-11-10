@@ -32,7 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.nullValue;
@@ -111,11 +113,13 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.user.email").value("kim@univ.ac.kr"))
                 .andExpect(jsonPath("$.data.user.role").value("STUDENT"))
                 .andExpect(jsonPath("$.data.user.studentNo").value("20240001"))
-                .andExpect(jsonPath("$.timestamp").doesNotExist());
+                // 성공 응답은 success·code·message·data 네 필드뿐이다
+                .andExpect(jsonPath("$.*", hasSize(4)))
+                .andExpect(jsonPath("$", allOf(hasKey("success"), hasKey("code"), hasKey("message"), hasKey("data"))));
     }
 
     @Test
-    void 학생이_아니면_응답에_studentNo가_없다() throws Exception {
+    void 학생이_아니면_studentNo는_null로_내려간다() throws Exception {
         when(authService.login(any(), any(), eq(Role.PROFESSOR))).thenReturn(
                 new LoginResponse("t", 3600, new LoginResponse.UserInfo(2L, "박교수", "park@univ.ac.kr", Role.PROFESSOR, null)));
 
@@ -123,7 +127,8 @@ class AuthControllerTest {
                         .content("{\"email\":\"park@univ.ac.kr\",\"password\":\"pw1234\",\"role\":\"PROFESSOR\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.user.role").value("PROFESSOR"))
-                .andExpect(jsonPath("$.data.user.studentNo").doesNotExist());
+                .andExpect(jsonPath("$.data.user", hasKey("studentNo")))
+                .andExpect(jsonPath("$.data.user.studentNo").value(nullValue()));
     }
 
     @Test
@@ -135,7 +140,9 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("AUTH-003"))
                 .andExpect(jsonPath("$.message").value("이메일 또는 비밀번호가 올바르지 않습니다"))
+                .andExpect(jsonPath("$", allOf(hasKey("data"), hasKey("errors"), hasKey("timestamp"), hasKey("path"))))
                 .andExpect(jsonPath("$.data").value(nullValue()))
+                .andExpect(jsonPath("$.errors").value(nullValue())) // 검증 에러가 아니면 errors는 null
                 .andExpect(jsonPath("$.path").value(LOGIN))
                 .andExpect(jsonPath("$.timestamp", matchesPattern("\\d{4}-\\d{2}-\\d{2}T.+")));
     }
@@ -146,7 +153,9 @@ class AuthControllerTest {
                         .content("{\"email\":\"x\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("COMMON-400"))
+                .andExpect(jsonPath("$.data").value(nullValue()))
                 .andExpect(jsonPath("$.errors", hasSize(3)))
+                .andExpect(jsonPath("$.errors[0]", allOf(hasKey("field"), hasKey("rejectedValue"), hasKey("reason"))))
                 .andExpect(jsonPath("$.errors[*].field", hasItem("email")))
                 .andExpect(jsonPath("$.errors[*].reason", hasItem("이메일 형식이 올바르지 않습니다")))
                 .andExpect(jsonPath("$.errors[*].reason", hasItem("비밀번호는 필수입니다")))
