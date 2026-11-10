@@ -42,7 +42,8 @@ public class SecurityConfig {
                         // 역할별 갈림길
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/professor/**").hasRole("PROFESSOR")
-                        .requestMatchers("/api/v1/enrollments/**", "/api/v1/courses/me/**").hasRole("STUDENT")
+                        // 접두어 없는 나머지 /api/v1/** 는 학생 API
+                        .requestMatchers("/api/v1/**").hasRole("STUDENT")
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
