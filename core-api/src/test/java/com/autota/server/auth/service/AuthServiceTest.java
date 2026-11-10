@@ -43,7 +43,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail("kim@univ.ac.kr"))
                 .thenReturn(Optional.of(user(7L, "kim@univ.ac.kr", "pw1234", Role.STUDENT, "20240001")));
 
-        LoginResponse res = authService.login("kim@univ.ac.kr", "pw1234", Role.STUDENT);
+        LoginResponse res = authService.login("kim@univ.ac.kr", "pw1234");
 
         assertThat(res.expiresIn()).isEqualTo(3600);
         assertThat(res.user().id()).isEqualTo(7L);
@@ -60,7 +60,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail("kim@univ.ac.kr"))
                 .thenReturn(Optional.of(user(7L, "kim@univ.ac.kr", "pw1234", Role.STUDENT, null)));
 
-        LoginResponse res = authService.login("  Kim@Univ.AC.kr ", "pw1234", Role.STUDENT);
+        LoginResponse res = authService.login("  Kim@Univ.AC.kr ", "pw1234");
 
         assertThat(res.user().id()).isEqualTo(7L);
         verify(userRepository).findByEmail("kim@univ.ac.kr");
@@ -70,7 +70,7 @@ class AuthServiceTest {
     void 없는_이메일은_AUTH_003이고_해시_비교를_한_번_한다() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.login("none@univ.ac.kr", "pw1234", Role.STUDENT))
+        assertThatThrownBy(() -> authService.login("none@univ.ac.kr", "pw1234"))
                 .isInstanceOfSatisfying(BusinessException.class,
                         e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
         // 계정 존재 여부가 응답 시간으로 드러나지 않도록 없는 이메일도 비교를 거친다
@@ -82,19 +82,21 @@ class AuthServiceTest {
         when(userRepository.findByEmail("kim@univ.ac.kr"))
                 .thenReturn(Optional.of(user(7L, "kim@univ.ac.kr", "pw1234", Role.STUDENT, null)));
 
-        assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", "wrong", Role.STUDENT))
+        assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", "wrong"))
                 .isInstanceOfSatisfying(BusinessException.class,
                         e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
     }
 
     @Test
-    void 역할이_다르면_AUTH_003() {
-        when(userRepository.findByEmail("kim@univ.ac.kr"))
-                .thenReturn(Optional.of(user(7L, "kim@univ.ac.kr", "pw1234", Role.STUDENT, null)));
+    void 역할은_요청이_아니라_DB의_role로_정해진다() {
+        when(userRepository.findByEmail("park@univ.ac.kr"))
+                .thenReturn(Optional.of(user(2L, "park@univ.ac.kr", "pw1234", Role.PROFESSOR, null)));
 
-        assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", "pw1234", Role.PROFESSOR))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
+        LoginResponse res = authService.login("park@univ.ac.kr", "pw1234");
+
+        assertThat(res.user().role()).isEqualTo(Role.PROFESSOR);
+        assertThat(res.user().studentNo()).isNull();
+        assertThat(jwt.getAuthUser(res.accessToken())).isEqualTo(new AuthUser(2L, Role.PROFESSOR));
     }
 
     @Test
@@ -103,7 +105,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail("kim@univ.ac.kr"))
                 .thenReturn(Optional.of(user(7L, "kim@univ.ac.kr", longPassword, Role.STUDENT, null)));
 
-        assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", longPassword, Role.STUDENT))
+        assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", longPassword))
                 .isInstanceOfSatisfying(BusinessException.class,
                         e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
     }

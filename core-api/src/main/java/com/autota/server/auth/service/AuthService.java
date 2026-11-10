@@ -1,7 +1,6 @@
 package com.autota.server.auth.service;
 
 import com.autota.server.auth.dto.LoginResponse;
-import com.autota.server.auth.entity.Role;
 import com.autota.server.auth.entity.User;
 import com.autota.server.auth.jwt.JwtProvider;
 import com.autota.server.auth.repository.UserRepository;
@@ -36,13 +35,13 @@ public class AuthService {
         this.dummyHash = passwordEncoder.encode("timing-guard");
     }
 
-    /** 이메일·비밀번호·역할 중 무엇이 틀렸는지 구분하지 않고 AUTH-003으로 응답한다. */
-    public LoginResponse login(String email, String password, Role expectedRole) {
+    /** 이메일·비밀번호 중 무엇이 틀렸는지 구분하지 않고 AUTH-003으로 응답한다. 역할은 DB의 users.role을 쓴다. */
+    public LoginResponse login(String email, String password) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         Optional<User> found = userRepository.findByEmail(normalizedEmail);
 
         boolean passwordMatches = passwordMatches(password, found.map(User::getPasswordHash).orElse(dummyHash));
-        if (found.isEmpty() || !passwordMatches || found.get().getRole() != expectedRole) {
+        if (found.isEmpty() || !passwordMatches) {
             log.warn("로그인 실패: email={}, reason={}", normalizedEmail, failureReason(found, passwordMatches));
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
@@ -73,7 +72,6 @@ public class AuthService {
 
     private String failureReason(Optional<User> found, boolean passwordMatches) {
         if (found.isEmpty()) return "없는 계정";
-        if (!passwordMatches) return "비밀번호 불일치";
-        return "역할 불일치";
+        return "비밀번호 불일치";
     }
 }

@@ -20,7 +20,7 @@ public class AuthController {
     @PostMapping("/auth/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request){
         return ApiResponse.ok(
-                authService.login(request.email(), request.password(), request.role())
+                authService.login(request.email(), request.password())
         );
     }
 }

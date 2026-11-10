@@ -69,15 +69,26 @@ class AuthControllerTest {
 
     /** 컨트롤러 안의 인가 실패와 경로 변수 타입 오류를 확인하기 위한 테스트 전용 엔드포인트 */
     @RestController
-    @RequestMapping("/api/v1/probe")
+    @RequestMapping("/api/v1")
     static class ProbeController {
-        @GetMapping("/admin")
-        @PreAuthorize("hasRole('ADMIN')")
-        String admin() {
+        @GetMapping("/professor/probe")
+        String professorPath() {
             return "ok";
         }
 
-        @GetMapping("/{id}")
+        @GetMapping("/admin/probe")
+        String adminPath() {
+            return "ok";
+        }
+
+        /** 필터는 통과(학생·교수 공통 경로)하고 컨트롤러에서 한 번 더 좁히는 경우 */
+        @GetMapping("/probe/professor-only")
+        @PreAuthorize("hasRole('PROFESSOR')")
+        String professorOnly() {
+            return "ok";
+        }
+
+        @GetMapping("/probe/{id}")
         String byId(@PathVariable Long id) {
             return "ok";
         }
@@ -92,13 +103,13 @@ class AuthControllerTest {
         return "Bearer " + jwt.createAccessToken(id, role);
     }
 
-    private static final String VALID_BODY = "{\"email\":\"kim@univ.ac.kr\",\"password\":\"pw1234\",\"role\":\"STUDENT\"}";
+    private static final String VALID_BODY = "{\"email\":\"kim@univ.ac.kr\",\"password\":\"pw1234\"}";
 
     // ---- 로그인 ----
 
     @Test
     void 학생_로그인_성공은_200과_명세_형태로_응답한다() throws Exception {
-        when(authService.login(eq("kim@univ.ac.kr"), eq("pw1234"), eq(Role.STUDENT))).thenReturn(
+        when(authService.login(eq("kim@univ.ac.kr"), eq("pw1234"))).thenReturn(
                 new LoginResponse("token-value", 3600,
                         new LoginResponse.UserInfo(7L, "김학생", "kim@univ.ac.kr", Role.STUDENT, "20240001")));
 
@@ -120,11 +131,11 @@ class AuthControllerTest {
 
     @Test
     void 학생이_아니면_studentNo는_null로_내려간다() throws Exception {
-        when(authService.login(any(), any(), eq(Role.PROFESSOR))).thenReturn(
+        when(authService.login(eq("park@univ.ac.kr"), any())).thenReturn(
                 new LoginResponse("t", 3600, new LoginResponse.UserInfo(2L, "박교수", "park@univ.ac.kr", Role.PROFESSOR, null)));
 
         mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"park@univ.ac.kr\",\"password\":\"pw1234\",\"role\":\"PROFESSOR\"}"))
+                        .content("{\"email\":\"park@univ.ac.kr\",\"password\":\"pw1234\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.user.role").value("PROFESSOR"))
                 .andExpect(jsonPath("$.data.user", hasKey("studentNo")))
@@ -133,7 +144,7 @@ class AuthControllerTest {
 
     @Test
     void 이메일_또는_비밀번호가_틀리면_401_AUTH_003() throws Exception {
-        when(authService.login(any(), any(), any())).thenThrow(new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+        when(authService.login(any(), any())).thenThrow(new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
         mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
                 .andExpect(status().isUnauthorized())
@@ -154,21 +165,16 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("COMMON-400"))
                 .andExpect(jsonPath("$.data").value(nullValue()))
-                .andExpect(jsonPath("$.errors", hasSize(3)))
+                .andExpect(jsonPath("$.errors", hasSize(2)))
                 .andExpect(jsonPath("$.errors[0]", allOf(hasKey("field"), hasKey("rejectedValue"), hasKey("reason"))))
                 .andExpect(jsonPath("$.errors[*].field", hasItem("email")))
                 .andExpect(jsonPath("$.errors[*].reason", hasItem("이메일 형식이 올바르지 않습니다")))
                 .andExpect(jsonPath("$.errors[*].reason", hasItem("비밀번호는 필수입니다")))
-                .andExpect(jsonPath("$.errors[*].reason", hasItem("역할은 필수입니다")));
+                .andExpect(jsonPath("$.errors[*].field", hasItem("password")));
     }
 
     @Test
-    void 알_수_없는_역할_값이나_깨진_JSON은_COMMON_400() throws Exception {
-        mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"kim@univ.ac.kr\",\"password\":\"pw\",\"role\":\"X\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("COMMON-400"));
-
+    void 본문이_없거나_깨진_JSON은_COMMON_400() throws Exception {
         mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON).content("{"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("COMMON-400"));
@@ -231,12 +237,56 @@ class AuthControllerTest {
 
     @Test
     void 컨트롤러_안의_인가_실패는_500이_아니라_403_COMMON_403() throws Exception {
-        mockMvc.perform(get("/api/v1/probe/admin").header("Authorization", bearer(1L, Role.STUDENT)))
+        mockMvc.perform(get("/api/v1/probe/professor-only").header("Authorization", bearer(1L, Role.STUDENT)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("COMMON-403"));
 
-        mockMvc.perform(get("/api/v1/probe/admin").header("Authorization", bearer(9L, Role.ADMIN)))
+        mockMvc.perform(get("/api/v1/probe/professor-only").header("Authorization", bearer(2L, Role.PROFESSOR)))
                 .andExpect(status().isOk());
+    }
+
+    // ---- 경로별 권한 (필터 단계) ----
+
+    @Test
+    void 공통_경로는_학생과_교수만_통과하고_관리자는_403() throws Exception {
+        mockMvc.perform(get("/api/v1/probe/1").header("Authorization", bearer(1L, Role.STUDENT)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/probe/1").header("Authorization", bearer(2L, Role.PROFESSOR)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/probe/1").header("Authorization", bearer(9L, Role.ADMIN)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("COMMON-403"));
+    }
+
+    @Test
+    void professor_경로는_교수만_통과한다() throws Exception {
+        mockMvc.perform(get("/api/v1/professor/probe").header("Authorization", bearer(2L, Role.PROFESSOR)))
+                .andExpect(status().isOk());
+        for (Role other : new Role[]{Role.STUDENT, Role.ADMIN}) {
+            mockMvc.perform(get("/api/v1/professor/probe").header("Authorization", bearer(1L, other)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("COMMON-403"));
+        }
+    }
+
+    @Test
+    void admin_경로는_관리자만_통과한다() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/probe").header("Authorization", bearer(9L, Role.ADMIN)))
+                .andExpect(status().isOk());
+        for (Role other : new Role[]{Role.STUDENT, Role.PROFESSOR}) {
+            mockMvc.perform(get("/api/v1/admin/probe").header("Authorization", bearer(1L, other)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("COMMON-403"));
+        }
+    }
+
+    @Test
+    void 토큰이_없으면_경로별_권한_검사보다_먼저_401() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/probe"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("COMMON-401"));
+        mockMvc.perform(get("/api/v1/professor/probe"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
