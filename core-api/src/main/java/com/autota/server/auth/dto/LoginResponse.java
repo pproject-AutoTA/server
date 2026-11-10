@@ -11,6 +11,7 @@ public record LoginResponse(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record UserInfo(
             Long id,
+            String name,
             String email,
             Role role,
             String studentNo

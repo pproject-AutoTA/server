@@ -1,6 +1,8 @@
 package com.autota.server.auth.jwt;
 
+import com.autota.server.problem.ErrorCode;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,6 +19,8 @@ import java.util.List;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    public static final String ERROR_ATTRIBUTE = "jwt.error";
+
     private final JwtProvider jwtProvider;
 
     @Override
@@ -32,8 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class)))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } catch (ExpiredJwtException e) {
+                SecurityContextHolder.clearContext();
+                request.setAttribute(ERROR_ATTRIBUTE, ErrorCode.AUTH_002);
             } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
+                request.setAttribute(ERROR_ATTRIBUTE, ErrorCode.AUTH_001);
             }
         }
         chain.doFilter(request, response);
