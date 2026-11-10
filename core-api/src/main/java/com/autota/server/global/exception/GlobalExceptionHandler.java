@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
         List<ApiResponse.FieldError> errors = e.getBindingResult().getFieldErrors().stream()
                 .map(f -> new ApiResponse.FieldError(f.getField(), f.getRejectedValue(), f.getDefaultMessage()))
                 .toList();
-        return build(ErrorCode.COMMON_400, request, errors);
+        return build(ErrorCode.INVALID_INPUT, request, errors);
     }
 
     /** 경로 변수·쿼리 파라미터 타입이 맞지 않음 (예: /problems/abc) */
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
         List<ApiResponse.FieldError> errors = List.of(
                 new ApiResponse.FieldError(e.getName(), e.getValue(), "값의 형식이 올바르지 않습니다"));
-        return build(ErrorCode.COMMON_400, request, errors);
+        return build(ErrorCode.INVALID_INPUT, request, errors);
     }
 
     /** @Validated 파라미터 검증 실패 */
@@ -49,24 +49,24 @@ public class GlobalExceptionHandler {
         List<ApiResponse.FieldError> errors = e.getConstraintViolations().stream()
                 .map(v -> new ApiResponse.FieldError(v.getPropertyPath().toString(), v.getInvalidValue(), v.getMessage()))
                 .toList();
-        return build(ErrorCode.COMMON_400, request, errors);
+        return build(ErrorCode.INVALID_INPUT, request, errors);
     }
 
     /** 본문이 없거나 JSON 형식이 깨진 경우, 알 수 없는 enum 값 */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnreadable(HttpMessageNotReadableException e, HttpServletRequest request) {
-        return build(ErrorCode.COMMON_400, request);
+        return build(ErrorCode.INVALID_INPUT, request);
     }
 
     /** 컨트롤러 안(@PreAuthorize 등)에서 던져진 인가 실패는 500이 아니라 403으로 */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException e, HttpServletRequest request) {
-        return build(ErrorCode.COMMON_403, request);
+        return build(ErrorCode.FORBIDDEN, request);
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException e, HttpServletRequest request) {
-        return build(ErrorCode.COMMON_401, request);
+        return build(ErrorCode.UNAUTHENTICATED, request);
     }
 
     @ExceptionHandler(Exception.class)
@@ -76,14 +76,14 @@ public class GlobalExceptionHandler {
             return fromStatus(er.getStatusCode(), request);
         }
         log.error("처리되지 않은 예외: {} {}", request.getMethod(), request.getRequestURI(), e);
-        return build(ErrorCode.COMMON_500, request);
+        return build(ErrorCode.INTERNAL_ERROR, request);
     }
 
     private ResponseEntity<ApiResponse<Void>> fromStatus(HttpStatusCode status, HttpServletRequest request) {
         return switch (status.value()) {
-            case 400 -> build(ErrorCode.COMMON_400, request);
-            case 404 -> build(ErrorCode.COMMON_404, request);
-            case 405 -> build(ErrorCode.COMMON_405, request);
+            case 400 -> build(ErrorCode.INVALID_INPUT, request);
+            case 404 -> build(ErrorCode.NOT_FOUND, request);
+            case 405 -> build(ErrorCode.METHOD_NOT_ALLOWED, request);
             default -> ResponseEntity.status(status).body(
                     ApiResponse.fail("COMMON-" + status.value(), "요청을 처리할 수 없습니다", request.getRequestURI()));
         };

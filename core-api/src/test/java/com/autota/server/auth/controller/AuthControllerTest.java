@@ -128,7 +128,7 @@ class AuthControllerTest {
 
     @Test
     void 이메일_또는_비밀번호가_틀리면_401_AUTH_003() throws Exception {
-        when(authService.login(any(), any(), any())).thenThrow(new BusinessException(ErrorCode.AUTH_003));
+        when(authService.login(any(), any(), any())).thenThrow(new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
         mockMvc.perform(post(LOGIN).contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
                 .andExpect(status().isUnauthorized())

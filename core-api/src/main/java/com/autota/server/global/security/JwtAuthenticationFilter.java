@@ -42,11 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (ExpiredJwtException e) {
                 SecurityContextHolder.clearContext();
-                request.setAttribute(AUTH_ERROR_ATTRIBUTE, ErrorCode.AUTH_002);
+                request.setAttribute(AUTH_ERROR_ATTRIBUTE, ErrorCode.EXPIRED_TOKEN);
                 log.debug("만료된 토큰: {}", request.getRequestURI());
             } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
-                request.setAttribute(AUTH_ERROR_ATTRIBUTE, ErrorCode.AUTH_001);
+                request.setAttribute(AUTH_ERROR_ATTRIBUTE, ErrorCode.INVALID_TOKEN);
                 log.debug("유효하지 않은 토큰: {} ({})", request.getRequestURI(), e.getClass().getSimpleName());
             }
         }

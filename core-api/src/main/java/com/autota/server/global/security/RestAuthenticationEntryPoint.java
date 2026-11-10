@@ -24,7 +24,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
             throws IOException {
         // 필터가 토큰 검사에 실패한 사유를 남겨 뒀으면 그것을, 아니면 토큰 없음으로 본다.
         Object reason = request.getAttribute(AUTH_ERROR_ATTRIBUTE);
-        ErrorCode code = reason instanceof ErrorCode c ? c : ErrorCode.COMMON_401;
+        ErrorCode code = reason instanceof ErrorCode c ? c : ErrorCode.UNAUTHENTICATED;
         writer.write(request, response, code);
     }
 }

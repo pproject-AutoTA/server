@@ -44,7 +44,7 @@ public class AuthService {
         boolean passwordMatches = passwordMatches(password, found.map(User::getPasswordHash).orElse(dummyHash));
         if (found.isEmpty() || !passwordMatches || found.get().getRole() != expectedRole) {
             log.warn("로그인 실패: email={}, reason={}", normalizedEmail, failureReason(found, passwordMatches));
-            throw new BusinessException(ErrorCode.AUTH_003);
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         User user = found.get();

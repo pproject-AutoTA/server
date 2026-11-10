@@ -72,7 +72,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login("none@univ.ac.kr", "pw1234", Role.STUDENT))
                 .isInstanceOfSatisfying(BusinessException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.AUTH_003));
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
         // 계정 존재 여부가 응답 시간으로 드러나지 않도록 없는 이메일도 비교를 거친다
         verify(encoder).matches(anyString(), anyString());
     }
@@ -84,7 +84,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", "wrong", Role.STUDENT))
                 .isInstanceOfSatisfying(BusinessException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.AUTH_003));
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
     }
 
     @Test
@@ -94,7 +94,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", "pw1234", Role.PROFESSOR))
                 .isInstanceOfSatisfying(BusinessException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.AUTH_003));
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
     }
 
     @Test
@@ -105,7 +105,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login("kim@univ.ac.kr", longPassword, Role.STUDENT))
                 .isInstanceOfSatisfying(BusinessException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.AUTH_003));
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS));
     }
 
     private User user(Long id, String email, String rawPassword, Role role, String studentNo) {
