@@ -19,8 +19,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-    public LoginResponse login(String username, String password, Role expectedRole) {
-        User user = userRepository.findByUsername(username).orElseThrow(this::invalidCredentials);
+    public LoginResponse login(String email, String password, Role expectedRole) {
+        User user = userRepository.findByEmail(email).orElseThrow(this::invalidCredentials);
         boolean passwordMatches = passwordEncoder.matches(password, user.getPasswordHash());
         boolean roleMatches = user.getRole() == expectedRole;
 
@@ -35,7 +35,7 @@ public class AuthService {
                 jwtProvider.getExpiresInSeconds(),
                 new LoginResponse.UserInfo(
                         user.getId(),
-                        user.getUsername(),
+                        user.getEmail(),
                         user.getRole(),
                         user.getStudentNo()
                 )
