@@ -1,9 +1,9 @@
 package com.autota.server.domain.auth.service;
 
 import com.autota.server.domain.auth.dto.LoginResponse;
-import com.autota.server.domain.auth.entity.User;
+import com.autota.server.domain.user.entity.User;
 import com.autota.server.domain.auth.jwt.JwtProvider;
-import com.autota.server.domain.auth.repository.UserRepository;
+import com.autota.server.domain.user.repository.UserRepository;
 import com.autota.server.global.exception.BusinessException;
 import com.autota.server.global.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;

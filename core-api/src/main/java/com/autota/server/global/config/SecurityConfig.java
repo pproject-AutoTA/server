@@ -4,7 +4,7 @@ import com.autota.server.domain.auth.jwt.JwtProvider;
 import com.autota.server.global.security.JwtAuthenticationFilter;
 import com.autota.server.global.security.RestAccessDeniedHandler;
 import com.autota.server.global.security.RestAuthenticationEntryPoint;
-import com.autota.server.domain.auth.entity.Role;
+import com.autota.server.domain.user.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

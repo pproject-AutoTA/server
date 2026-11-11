@@ -1,6 +1,6 @@
 package com.autota.server.domain.auth.jwt;
 
-import com.autota.server.domain.auth.entity.Role;
+import com.autota.server.domain.user.entity.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;

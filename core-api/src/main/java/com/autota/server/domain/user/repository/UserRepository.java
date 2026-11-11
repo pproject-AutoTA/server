@@ -1,6 +1,6 @@
-package com.autota.server.domain.auth.repository;
+package com.autota.server.domain.user.repository;
 
-import com.autota.server.domain.auth.entity.User;
+import com.autota.server.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
