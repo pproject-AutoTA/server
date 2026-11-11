@@ -1,4 +1,4 @@
-# 기본 설정만 둔다. 환경별 값은 application-{profile}.yml에서 환경 변수로 주입한다.
+# 바뀌지 않는 기본값만 둔다. 바뀔 수 있는 값은 application-prod.yml에서 환경 변수로 주입한다.
 spring:
   application:
     name: core-api
