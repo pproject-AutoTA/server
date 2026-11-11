@@ -1,6 +1,6 @@
 package com.autota.server.course.controller;
 
-import com.autota.server.auth.jwt.AuthUser;
+import com.autota.server.domain.auth.jwt.AuthUser;
 import com.autota.server.course.dto.CourseResponse;
 import com.autota.server.course.dto.CreateCourseRequest;
 import com.autota.server.course.dto.EnrolledCourseResponse;

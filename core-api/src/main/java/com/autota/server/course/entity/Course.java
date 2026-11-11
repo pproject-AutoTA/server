@@ -1,7 +1,7 @@
 package com.autota.server.course.entity;
 
-import com.autota.server.auth.entity.Role;
-import com.autota.server.auth.entity.User;
+import com.autota.server.domain.user.entity.Role;
+import com.autota.server.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

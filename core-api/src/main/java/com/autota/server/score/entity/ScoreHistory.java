@@ -1,6 +1,6 @@
 package com.autota.server.score.entity;
 
-import com.autota.server.auth.entity.User;
+import com.autota.server.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

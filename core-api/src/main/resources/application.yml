@@ -1,8 +1,28 @@
-# 기본 설정만 둔다. 환경별 값은 application-{profile}.yml에서 환경 변수로 주입한다.
+# 로컬 개발 기본값. 프로필 없이 실행하면 이 값으로 뜬다.
+# 개발/운영 값은 application-dev.yml / application-prod.yml(커밋 안 함)에서 환경 변수로 덮어쓴다.
+server:
+  port: 8080
+
 spring:
   application:
     name: core-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/autota
+    username: autota
+    password: autota
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  jpa:
+    open-in-view: false # API 서버라 요청이 끝날 때까지 DB 연결을 잡고 있지 않는다
+
+cors:
+  # 브라우저에서 API를 호출할 프론트 오리진(쉼표로 구분)
+  allowed-origins: http://localhost:3000,http://localhost:5173
 
 jwt:
-  secret: ${JWT_SECRET}
-  expires-in-seconds: ${JWT_EXPIRES_IN_SECONDS:3600}
+  # 로컬 전용 더미 키. dev/prod에서는 반드시 JWT_SECRET으로 덮어쓴다.
+  secret: local-dev-only-jwt-secret-change-me-0123456789
+  expires-in-seconds: 3600

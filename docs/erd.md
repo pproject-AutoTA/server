@@ -280,7 +280,7 @@ Must의 문제 등록 API에는 그룹 입력이 없다. 등록 시 그룹 1개(
 
 인덱스 `(problem_id, student_id, submitted_at DESC)`. 제출 이력(RES-01)과 "성적 대상 = 마지막 제출" 조회가 이 인덱스를 탄다. 성적 대상 여부는 컬럼으로 두지 않고 최신 행으로 계산한다 **(미정: 조회가 복잡하면 `is_latest` 컬럼 추가)**.
 
-`RUNNING`은 API 명세에 있지만, 워커는 core-api를 호출하지 않고 결과만 큐로 보내므로(ADR 0001) 지금 계약으로는 이 상태로 바꿀 주체가 없다. judge-worker가 채점 시작 시 상태 메시지를 발행하거나, `RUNNING`을 빼고 `PENDING` → `DONE`으로 갈지 **(미정, contracts에서 정리)**.
+`RUNNING`은 judge-worker가 채점 컨테이너를 띄우기 직전 `result.queue`로 보내는 `JudgeStarted`로 바꾼다. `PENDING`일 때만 전이하고, 늦게 오면 무시한다. 상태 전이 규칙 전체는 `contracts/README.md`의 멱등 표를 따른다.
 
 FLAG는 `verdict` 값이 아니다. 기획서대로 판정과 분리해 `lint_results.flagged`에 둔다. 역할 분담 문서의 Verdict 목록에는 FLAG가 들어 있어 contracts 정의 때 맞춘다.
 
@@ -291,7 +291,7 @@ FLAG는 `verdict` 값이 아니다. 기획서대로 판정과 분리해 `lint_re
 | id | bigint | PK | |
 | submission_id | bigint | FK submissions ON DELETE CASCADE, NOT NULL | |
 | testcase_id | bigint | FK testcases, NOT NULL | |
-| verdict | varchar(8) | NOT NULL, CHECK | |
+| verdict | varchar(8) | NOT NULL, CHECK | `AC` `WA` `TLE` `MLE` `RE` `SKIPPED`. `SKIPPED`는 앞 케이스에서 컨테이너가 죽어 실행하지 못한 케이스(contracts). 이때 측정값 두 컬럼은 NULL |
 | cpu_time_ms | int | NULL | API `timeMs` |
 | memory_kb | int | NULL | |
 | actual_output | text | NULL | 학생의 실제 출력. API가 1KB까지 돌려주므로 저장도 1KB에서 자른다 |
@@ -305,10 +305,10 @@ FLAG는 `verdict` 값이 아니다. 기획서대로 판정과 분리해 `lint_re
 | id | bigint | PK | |
 | submission_id | bigint | FK submissions ON DELETE CASCADE, UNIQUE, NOT NULL | 최종 실패한 제출당 한 행 |
 | retry_count | int | NOT NULL | 재시도 횟수. API `retryCount` |
-| reason | text | NOT NULL | 워커가 남긴 메시지. 학생 코드의 RE는 제외 |
+| reason | text | NOT NULL | `JudgeResult.error`의 `code: message`. dead letter 경로면 `delivery_limit`. 학생 코드의 RE는 제외 |
 | failed_at | timestamptz | NOT NULL | 최종 실패 시각 |
 
-ADMIN-02 응답(`submissionId, problemId, failedAt, reason, retryCount`)과 1:1이라 집계가 필요 없다. 시도별 이력이 필요해지면 행을 시도마다 두고 API에서 집계한다. SUB-02 규칙대로 3회 재시도 후 `submissions.status = FAILED`가 되면서 이 행이 생긴다. 이 행을 누가 적는지(judge-worker가 실패 결과를 발행 / dead letter 소비자)는 ADR 0002에서 **(미정)**.
+ADMIN-02 응답(`submissionId, problemId, failedAt, reason, retryCount`)과 1:1이라 집계가 필요 없다. 시도별 이력이 필요해지면 행을 시도마다 두고 API에서 집계한다. SUB-02 규칙대로 3회 재시도 후 `submissions.status = FAILED`가 되면서 이 행이 생긴다. 경로는 둘이다. judge-worker가 4회째 시도에서 `JudgeResult status=FAILED`를 보내면 core-api가 `error`를 `reason`에, `attempt - 1`을 `retry_count`에 적는다. 워커가 죽어 브로커 `delivery-limit`에 걸리면 core-api의 `judge.dlq` 소비자가 `reason = delivery_limit`, `retry_count = x-delivery-count`로 적는다(`contracts/README.md`).
 
 ## 4. Should 테이블
 
@@ -319,13 +319,13 @@ ADMIN-02 응답(`submissionId, problemId, failedAt, reason, retryCount`)과 1:1�
 | lint_policies | id, problem_id FK UNIQUE, mode | 문제당 하나. `DENYLIST`(기본) `ALLOWLIST` |
 | lint_policy_tags | id, policy_id FK, kind, tag | `kind`: `BANNED` `ALLOWED` `REQUIRED`. `UNIQUE (policy_id, kind, tag)` |
 
-`call:eval`, `call:getattr`는 항상 금지인데 행으로 넣을지 코드에서 강제할지는 **(미정)**.
+`call:eval`, `call:getattr`는 lint-worker가 항상 금지 목록에 더한다(contracts). 행으로 저장하지 않는다.
 
 ### lint_results, lint_findings (S1)
 
 | 테이블 | 컬럼 | 비고 |
 | --- | --- | --- |
-| lint_results | id, submission_id FK CASCADE UNIQUE, flagged, checked_at | 제출당 하나. Must에서는 행이 없고 API의 `flagged`는 항상 `false` |
+| lint_results | id, submission_id FK CASCADE UNIQUE, status, flagged, checked_at | 제출당 하나. `status`: `DONE` `SKIPPED`(파싱 불가, 이때 `flagged = false`). Must에서는 행이 없고 API의 `flagged`는 항상 `false` |
 | lint_findings | id, lint_result_id FK CASCADE, kind, tag, line, col, snippet | `kind`: `BANNED` `NOT_ALLOWED` `MISSING_REQUIRED`. 교수만 본다 |
 
 ### scores, score_adjustments (S2·S3)

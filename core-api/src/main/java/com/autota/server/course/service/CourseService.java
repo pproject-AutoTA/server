@@ -1,8 +1,8 @@
 package com.autota.server.course.service;
 
 import com.autota.server.assignment.service.AssignmentService;
-import com.autota.server.auth.entity.User;
-import com.autota.server.auth.service.UserService;
+import com.autota.server.domain.user.entity.User;
+import com.autota.server.domain.user.service.UserService;
 import com.autota.server.course.dto.EnrolledCourseResponse;
 import com.autota.server.course.dto.JoinCourseResponse;
 import com.autota.server.course.dto.OwnedCourseResponse;
@@ -66,7 +66,7 @@ public class CourseService {
         }
 
         Instant joinedAt = enrollment.getCreatedAt() != null ? enrollment.getCreatedAt() : Instant.now();
-        return JoinCourseResponse.of(course, course.getProfessor().getUsername(), joinedAt);
+        return JoinCourseResponse.of(course, course.getProfessor().getName(), joinedAt);
     }
 
     /** 학생이 참여 중인 수업 목록. */
@@ -76,7 +76,7 @@ public class CourseService {
         Counts counts = countsOf(courses);
         return courses.stream()
                 .map(c -> EnrolledCourseResponse.of(
-                        c, c.getProfessor().getUsername(), counts.students(c), counts.assignments(c)))
+                        c, c.getProfessor().getName(), counts.students(c), counts.assignments(c)))
                 .toList();
     }
 

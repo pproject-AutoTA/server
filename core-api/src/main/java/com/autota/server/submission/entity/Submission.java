@@ -1,7 +1,7 @@
 package com.autota.server.submission.entity;
 
 import com.autota.server.problem.entity.Problem;
-import com.autota.server.auth.entity.User;
+import com.autota.server.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

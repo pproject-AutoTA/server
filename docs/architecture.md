@@ -27,9 +27,9 @@ flowchart LR
 
 1. web이 `core-api`에 코드를 제출한다. core-api는 제출을 저장하고 `judge.queue`에 메시지를 넣은 뒤 바로 응답한다. S1부터는 `lint.queue`에도 넣는다.
    - DB 저장과 큐 발행은 한 트랜잭션이 아니다. 발행이 실패한 제출이 '대기'에 남지 않게 하는 방법(커밋 후 발행 + 재시도, 또는 멈춘 제출을 다시 발행하는 정리 작업)은 **(미정)**.
-2. `judge-worker`가 `judge.queue`에서 꺼내 채점 컨테이너를 띄우고 테스트케이스를 전부 실행한 뒤 판정을 `result.queue`로 보낸다.
+2. `judge-worker`가 `judge.queue`에서 꺼내 `JudgeStarted`를 `result.queue`로 보내고(core-api가 `RUNNING`으로 바꾼다), 채점 컨테이너를 띄워 테스트케이스를 전부 실행한 뒤 판정(`JudgeResult`)을 `result.queue`로 보낸다.
 3. `lint-worker`가 `lint.queue`에서 꺼내 허용 요소를 검사하고 FLAG 결과를 `result.queue`로 보낸다. core-api는 이 결과를 기다리지 않는다. 판정은 LintResult 없이 확정된다.
-4. core-api가 `result.queue`를 받아 저장한다. 큐는 at-least-once라 같은 메시지가 두 번 올 수 있다. 중복 제거 키는 `submission_id`만이 아니라 **`(submission_id, 결과 종류)`**다. 제출 하나에 JudgeResult와 LintResult가 따로 오기 때문이다. 중복 제거는 DB 제약(유니크) 또는 조건부 갱신으로 한다(`docs/erd.md` §5).
+4. core-api가 `result.queue`를 받아 저장한다. 큐는 at-least-once라 같은 메시지가 두 번 올 수 있다. 중복 제거 키는 `submission_id`만이 아니라 **`(submission_id, 결과 종류)`**다. 제출 하나에 JudgeStarted·JudgeResult·LintResult가 따로 오기 때문이다. 중복 제거는 DB 제약(유니크) 또는 상태 전이 조건으로 한다(`contracts/README.md`, `docs/erd.md` §5).
 
 워커는 core-api를 호출하지 않는다. 의존은 core-api → 큐 → 워커 → 큐 → core-api 한 방향이다.
 
@@ -77,7 +77,11 @@ RabbitMQ 하나를 세 서비스가 같이 쓴다. 운영 브로커는 **클러�
 | --- | --- | --- | --- |
 | `judge.queue` | core-api | judge-worker | `JudgeRequest` |
 | `lint.queue` | core-api | lint-worker | `LintRequest` (S1) |
-| `result.queue` | judge-worker, lint-worker | core-api | `JudgeResult`, `LintResult` |
+| `result.queue` | judge-worker, lint-worker | core-api | `JudgeStarted`, `JudgeResult`, `LintResult` |
+| `judge.dlq` | 브로커 (delivery-limit 초과) | core-api | 한도를 넘긴 `JudgeRequest`. `FAILED` 처리 |
+| `lint.dlq`, `result.dlq` | 브로커 | 소비 안 함 | 관리 UI에서 확인 |
+
+큐는 모두 quorum 타입이고 `delivery-limit` 3, dead letter는 `at-least-once`다. 큐·exchange는 서비스가 선언하지 않고 RabbitMQ definitions(compose, `infra/ec2/`)로 만든다. 채점 자체가 실패하면 judge-worker가 `basic.reject`로 돌려보내다가 4회째에 `JudgeResult FAILED`를 보낸다. 자세한 규칙은 `contracts/README.md`.
 
 메시지 필드 정의와 예시는 `contracts/`에 둔다. 각 서비스는 그 정의를 보고 자기 폴더에 record(또는 dataclass)를 복사해 쓴다. 필드는 추가만 하고, 삭제·이름 변경은 A·B 합의 후 별도 PR로 한다.
 
@@ -89,7 +93,7 @@ RabbitMQ 하나를 세 서비스가 같이 쓴다. 운영 브로커는 **클러�
 | --- | --- | --- |
 | CPU 시간 | 컨테이너 cgroup `cpu.stat`로 측정해 판정. `RLIMIT_CPU`는 안전장치(ADR 0004) | 같음 |
 | 벽시계 상한 | CPU 시간이 쌓이지 않는 대기 코드를 끊는 안전 상한(CPU 제한의 몇 배). 넘으면 TLE | 같음 |
-| 메모리 상한 | `--memory` | `resources.limits`(request = limit) |
+| 메모리 상한 | 케이스마다 자식 프로세스에 `RLIMIT_AS`, 값은 `ru_maxrss`. 컨테이너 `--memory`는 안전장치(ADR 0004) | 케이스마다 `RLIMIT_AS`, `resources.limits`(request = limit)는 안전장치 |
 | 출력 상한 | 1MB 초과 시 중단, RE | 같음 |
 | 네트워크 | `--network none` | NetworkPolicy로 judge 네임스페이스 ingress·egress 기본 거부. Pod에는 네트워크를 끄는 옵션이 없다 |
 | 파일시스템 | `--read-only` + 작업 디렉터리만 쓰기 | `readOnlyRootFilesystem` + `emptyDir` 작업 디렉터리 |

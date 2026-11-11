@@ -1,0 +1,3 @@
+- 로그인(JWT 발급)
+- 역할(학생 · 교수 · 관리자)은 DB의 users.role 하나. 로그인 요청에 role 없음, 경로별 검사는 SecurityConfig
+- 회원가입 없음, seed 계정 사용
