@@ -12,6 +12,10 @@ HELP.md
 
 # Spring Boot config — 구조는 커밋, 시크릿만 제외
 **/src/main/resources/application-local.yml
+**/src/main/resources/application-dev.yml
+
+# core-api 테스트 코드는 로컬에서만 관리한다
+core-api/src/test/
 **/src/main/resources/application-secret.yml
 **/src/main/resources/application-*-secret.yml
 
