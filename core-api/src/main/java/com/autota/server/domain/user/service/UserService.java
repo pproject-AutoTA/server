@@ -20,6 +20,10 @@ public class UserService {
         return userRepository.findByEmail(email).map(UserService::toCredential);
     }
 
+    public Optional<String> findNameById(Long id) {
+        return userRepository.findById(id).map(User::getName);
+    }
+
     private static UserCredential toCredential(User user) {
         return new UserCredential(
                 user.getId(),
