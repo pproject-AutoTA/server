@@ -1,6 +1,7 @@
 package com.autota.server.domain.user.service;
 
 import com.autota.server.domain.user.dto.UserCredential;
+import com.autota.server.domain.user.entity.Role;
 import com.autota.server.domain.user.entity.User;
 import com.autota.server.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,10 @@ public class UserService {
 
     public Optional<String> findNameById(Long id) {
         return userRepository.findById(id).map(User::getName);
+    }
+
+    public Role findRoleById(Long id) {
+        return userRepository.findRoleById(id);
     }
 
     private static UserCredential toCredential(User user) {
