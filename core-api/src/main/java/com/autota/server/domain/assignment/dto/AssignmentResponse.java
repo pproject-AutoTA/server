@@ -10,8 +10,10 @@ public record AssignmentResponse(
         LocalDateTime dueAt,
         /** 교수만 값, 학생은 null */
         Integer studentCount,
+        /** TODO(problem): problem 도메인이 생길 때까지 항상 빈 배열이다. */
         List<Problem> problems
 ) {
+    /** TODO(problem·submission): 아직 값을 채우는 코드가 없다. 응답 모양만 명세(3번)대로 잡아 둔 것이다. */
     public record Problem(
             Long id,
             String title,
@@ -25,6 +27,7 @@ public record AssignmentResponse(
     ) {
     }
 
+    /** TODO(submission): status·verdict는 submission 도메인에 enum이 생기면 String 대신 그 타입으로 바꾼다. */
     public record MySubmission(
             Long submissionId,
             /** PENDING, RUNNING, DONE, FAILED */
