@@ -1,7 +1,9 @@
 package com.autota.server.domain.submission.service;
 
 import com.autota.server.domain.auth.jwt.AuthUser;
+import com.autota.server.domain.submission.dto.MySubmissionDetailResponse;
 import com.autota.server.domain.submission.dto.MySubmissionsResponse;
+import org.springframework.transaction.annotation.Transactional;
 import com.autota.server.domain.submission.dto.SubmitResponse;
 import com.autota.server.domain.submission.entity.Submission;
 import com.autota.server.domain.submission.repository.SubmissionRepository;
@@ -46,6 +48,48 @@ public class StudentSubmissionService {
                         LocalDateTime.ofInstant(s.submittedAt(), ZoneId.of("Asia/Seoul")),
                         s.id().equals(latestId)))
                 .toList();
+    }
+
+    /**
+     * 내 제출 상세. 클라이언트가 채점이 끝날 때까지 2초마다 조회한다.
+     *
+     * TODO(problem·assignment): 두 도메인이 develop에 들어오면 testcases·hiddenTotal을 채운다.
+     * 지금은 testcases가 항상 빈 배열이고 hiddenTotal은 0이다.
+     *
+     * 필요한 것(이름은 예시):
+     *   problem 도메인: 그 문제의 케이스 전부(id, no, isPublic, input, expectedOutput)와 마감 시각(dueAt)
+     *   submission 도메인: SubmissionCaseResultRepository.findBySubmission(submission)
+     *
+     * 채우는 규칙:
+     *   - status가 DONE일 때만 testcases를 채운다. 채점 전·FAILED는 빈 배열
+     *   - 케이스 결과를 testcaseId로 문제의 케이스와 맞춰 no 순으로 내린다
+     *     (no, isPublic, verdict, timeMs = cpuTimeMs, input, expectedOutput, actualOutput)
+     *   - 마감 전(now <= dueAt): 공개 케이스만 넣고, hiddenPassed = hiddenPassedCount,
+     *     hiddenTotal = 비공개 케이스 수
+     *   - 마감 후: 비공개 케이스도 넣고, hiddenPassed·hiddenTotal은 둘 다 null
+     */
+    @Transactional(readOnly = true)
+    public MySubmissionDetailResponse getMySubmission(AuthUser user, long submissionId) {
+        Submission s = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SUBMISSION_NOT_FOUND));
+        if (!s.getStudentId().equals(user.id())) {
+            throw new BusinessException(ErrorCode.SUBMISSION_FORBIDDEN);
+        }
+
+        return new MySubmissionDetailResponse(
+                s.getId(),
+                s.getProblemId(),
+                s.getStatus().name(),
+                s.getVerdict() == null ? null : s.getVerdict().name(),
+                s.getCode(),
+                LocalDateTime.ofInstant(s.getSubmittedAt(), ZoneId.of("Asia/Seoul")),
+                s.getJudgedAt() == null ? null : LocalDateTime.ofInstant(s.getJudgedAt(), ZoneId.of("Asia/Seoul")),
+                s.getCpuTimeMs(),
+                s.getMemoryKb(),
+                List.of(),                  // TODO(problem·assignment)
+                s.getHiddenPassedCount(),   // TODO(assignment): 마감 후에는 null
+                0,                          // TODO(problem): 비공개 케이스 수, 마감 후에는 null
+                false);                     // Must에서는 항상 false (S1에서 lint_results.flagged)
     }
 
     /**

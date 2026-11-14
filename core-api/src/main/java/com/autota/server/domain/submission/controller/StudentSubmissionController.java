@@ -1,6 +1,7 @@
 package com.autota.server.domain.submission.controller;
 
 import com.autota.server.domain.auth.jwt.AuthUser;
+import com.autota.server.domain.submission.dto.MySubmissionDetailResponse;
 import com.autota.server.domain.submission.dto.MySubmissionsResponse;
 import com.autota.server.domain.submission.dto.SubmitRequest;
 import com.autota.server.domain.submission.dto.SubmitResponse;
@@ -35,4 +36,9 @@ public class StudentSubmissionController {
         return ApiResponse.ok(studentSubmissionService.getMySubmissions(user, problemId));
     }
 
+    @GetMapping("/submissions/me/{submissionId}")
+    public ApiResponse<MySubmissionDetailResponse> getMySubmission(@AuthenticationPrincipal AuthUser user,
+                                @PathVariable("submissionId") long submissionId) {
+        return ApiResponse.ok(studentSubmissionService.getMySubmission(user, submissionId));
+    }
 }
