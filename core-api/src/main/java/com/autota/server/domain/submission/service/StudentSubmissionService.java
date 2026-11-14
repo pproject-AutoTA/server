@@ -1,17 +1,20 @@
 package com.autota.server.domain.submission.service;
 
 import com.autota.server.domain.auth.jwt.AuthUser;
+import com.autota.server.domain.submission.dto.MySubmissionsResponse;
 import com.autota.server.domain.submission.dto.SubmitResponse;
 import com.autota.server.domain.submission.entity.Submission;
 import com.autota.server.domain.submission.repository.SubmissionRepository;
 import com.autota.server.global.exception.BusinessException;
 import com.autota.server.global.exception.ErrorCode;
 import java.nio.charset.StandardCharsets;
+import com.autota.server.domain.submission.repository.SubmissionSummary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,30 @@ public class StudentSubmissionService {
 
     private final SubmissionRepository submissionRepository;
     //private final ProblemService problemService; (problem entity에다가 totalCount 열 추가하고 조회 메서드 생성)
+
+    public List<MySubmissionsResponse> getMySubmissions(AuthUser user, long problemId) {
+        //submission 중 problemId와 studentId가 모두 일치하는 submission의
+            //Submission: id, status, verdict, passedCount, submittedAt
+                //totalCount (problem에서 계산)
+            //Problem: totalCount
+        List<SubmissionSummary> summary = submissionRepository.findSummaries(user.id(), problemId);
+        //int totalCount = problemService.getTotalCount(problemId);
+        int totalCount = 0; // TODO(problem): problem이 develop에 들어오면 윗줄로 교체
+
+        // 최신순이라 첫 번째가 마지막 제출(isLatest)
+        Long latestId = summary.isEmpty() ? null : summary.get(0).id();
+
+        return summary.stream()
+                .map(s -> new MySubmissionsResponse(
+                        s.id(),
+                        s.status().name(),
+                        s.verdict() == null ? null : s.verdict().name(), // 채점 전이면 null
+                        s.passedCount(),
+                        totalCount,
+                        LocalDateTime.ofInstant(s.submittedAt(), ZoneId.of("Asia/Seoul")),
+                        s.id().equals(latestId)))
+                .toList();
+    }
 
     /**
      * 코드 제출. 저장하고 채점 요청을 큐에 넣은 뒤 바로 돌아온다(채점 결과는 result.queue로 온다).
