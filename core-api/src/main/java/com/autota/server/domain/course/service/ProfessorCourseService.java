@@ -24,7 +24,7 @@ public class ProfessorCourseService {
     @Transactional
     public ProfessorCourseResponse createCourse(Long professorId, ProfessorCourseRequest request) {
         Course course = courseRepository.save(
-                new Course(professorId, request.name(), request.semester(), newJoinCode())
+                Course.create(professorId, request.name(), request.semester(), newJoinCode())
         );
 
         return new ProfessorCourseResponse(
