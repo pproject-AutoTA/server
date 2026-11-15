@@ -10,6 +10,7 @@ import com.autota.server.domain.course.repository.EnrollmentRepository;
 import com.autota.server.domain.user.service.UserService;
 import com.autota.server.global.exception.BusinessException;
 import com.autota.server.global.exception.ErrorCode;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,7 @@ public class StudentCourseService {
     private final EnrollmentRepository enrollmentRepository;
     private final UserService userService;
 
+    @Transactional
     public StudentCourseResponse enrollCourse(AuthUser user, StudentCourseRequest request) {
         // 학생만 들어오는 것은 SecurityConfig가 보장한다. 발급 코드는 전부 대문자라 대문자로 맞춰 찾는다(대소문자 구분 없음).
         Course course = courseRepository.findCourseByJoinCode(request.joinCode().trim().toUpperCase(Locale.ROOT))
