@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Generated;
-import org.hibernate.generator.EventType;
 
 import java.time.Instant;
 
@@ -27,13 +25,17 @@ public class Enrollment {
     @Column(nullable = false)
     private Long studentId;
 
-    /** 참여 시각(joinedAt). DB 기본값(now())이 채운다. 읽기 전용. */
-    @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", insertable = false, updatable = false)
+    /** 참여 시각(joinedAt). create()가 채운다. 이후 수정 불가. */
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public Enrollment(Course course, Long studentId) {
+    private Enrollment(Course course, Long studentId, Instant createdAt) {
         this.course = course;
         this.studentId = studentId;
+        this.createdAt = createdAt;
+    }
+
+    public static Enrollment create(Course course, Long studentId) {
+        return new Enrollment(course, studentId, Instant.now());
     }
 }

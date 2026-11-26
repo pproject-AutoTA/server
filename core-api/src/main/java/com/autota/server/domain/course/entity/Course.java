@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Generated;
-import org.hibernate.generator.EventType;
 
 import java.time.Instant;
 
@@ -32,15 +30,19 @@ public class Course {
     @Column(nullable = false, unique = true, length = 16)
     private String joinCode;
 
-    /** DB 기본값(now())이 채운다. 읽기 전용. */
-    @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", insertable = false, updatable = false)
+    /** create()가 채운다. 이후 수정 불가. */
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public Course(Long professorId, String name, String semester, String joinCode) {
+    private Course(Long professorId, String name, String semester, String joinCode, Instant createdAt) {
         this.professorId = professorId;
         this.name = name;
         this.semester = semester;
         this.joinCode = joinCode;
+        this.createdAt = createdAt;
+    }
+
+    public static Course create(Long professorId, String name, String semester, String joinCode) {
+        return new Course(professorId, name, semester, joinCode, Instant.now());
     }
 }
