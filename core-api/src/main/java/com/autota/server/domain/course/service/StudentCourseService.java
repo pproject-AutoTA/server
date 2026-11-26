@@ -34,7 +34,7 @@ public class StudentCourseService {
             throw new BusinessException(ErrorCode.ALREADY_ENROLLED);
         }
         Enrollment enrollment = enrollmentRepository.save(
-                new Enrollment(course, user.id())
+                Enrollment.create(course, user.id())
         );
         String professorName = userService.findNameById(course.getProfessorId()).orElse(null);
         return new StudentCourseResponse(
