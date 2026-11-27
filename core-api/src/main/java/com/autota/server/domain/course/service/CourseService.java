@@ -1,5 +1,6 @@
 package com.autota.server.domain.course.service;
 
+import com.autota.server.domain.assignment.service.AssignmentQueryService;
 import com.autota.server.domain.auth.jwt.AuthUser;
 import com.autota.server.domain.course.dto.CourseResponse;
 import com.autota.server.domain.course.entity.Course;
@@ -22,6 +23,7 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final UserService userService;
+    private final AssignmentQueryService assignmentQueryService;
 
     /**
      * 수업이 있고 로그인 사용자가 그 수업 사람인지 확인한다. 다른 도메인(과제·문제·제출)에서도 쓴다.
@@ -51,7 +53,7 @@ public class CourseService {
                 ? courseRepository.findCoursesByStudentId(authUser.id())
                 : courseRepository.findByProfessorId(authUser.id());
 
-        // shortcut: 수업마다 쿼리 2번(N+1), 수업 수가 많아지면 in/group by 조회로 바꾼다
+        // shortcut: 수업마다 쿼리 3번(N+1), 수업 수가 많아지면 in/group by 조회로 바꾼다
         boolean isProfessor = authUser.is(Role.PROFESSOR);
         return courses.stream()
                 .sorted(Comparator.comparing(Course::getSemester).reversed()) // 최근 학기 순(YYYY-N은 문자열 비교로 충분)
@@ -62,7 +64,7 @@ public class CourseService {
                         userService.findNameById(course.getProfessorId()).orElse(null),
                         isProfessor ? course.getJoinCode() : null, // 참여 코드는 교수에게만 내린다
                         (int) courseRepository.countStudents(course.getId()),
-                        0 // assignment 도메인이 생기면 그쪽 service로 채운다
+                        assignmentQueryService.countByCourse(course.getId())
                 ))
                 .toList();
     }
