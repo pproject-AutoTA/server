@@ -35,11 +35,13 @@ public class AssignmentService {
                         assignment.getTitle(),
                         LocalDateTime.ofInstant(assignment.getDueAt(), SEOUL),
                         studentCount,
-                        // TODO(problem·submission): 두 도메인이 아직 없어 문제 목록을 항상 빈 배열로 내린다.
-                        //  - problem이 생기면: ProblemService로 과제별 문제(id, title, resubmitAllowed, testcaseCount)를 채운다.
-                        //  - submission이 생기면: 교수는 submittedStudentCount, 학생은 mySubmission(최신 제출 1건)을 채운다.
-                        //    반대 역할에게는 그 필드를 null로 내린다.
+                        // TODO(problem): problem 도메인이 아직 없어 문제 목록을 항상 빈 배열로 내린다.
+                        //  - ProblemService로 과제별 문제(id, title, resubmitAllowed, testcaseCount)를 채운다.
                         //  - 과제마다 조회하면 N+1이 되므로 과제 id 목록으로 한 번에 가져온다.
+                        // TODO(submission): problems[]가 채워진 뒤, 문제마다 아래 두 필드를 채운다.
+                        //  - submittedStudentCount: 한 번 이상 제출한 학생 수. 교수만 값, 학생은 null.
+                        //  - mySubmission: 내 최신 제출 1건. 학생만 값, 제출이 없거나 교수면 null.
+                        //  - 문제마다 조회하지 않고 문제 id 목록으로 한 번에 가져온다.
                         List.of()
                 ))
                 .toList();
