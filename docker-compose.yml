@@ -1,0 +1,78 @@
+# 로컬 개발 환경. 운영 구성은 docs/architecture.md §5.
+#   .env.example을 .env로 복사해 계정 값을 채운 뒤
+#   docker compose up -d
+# 계정 값은 저장소에 두지 않고 .env에서만 읽는다. 포트는 127.0.0.1에만 연다.
+# core-api·judge-worker 서비스는 각 서비스 이슈에서 추가한다.
+
+name: autota
+
+services:
+  rabbitmq:
+    # contracts/README.md가 4.3 이상을 전제로 한다(delivery-limit 기준, at-least-once dead letter).
+    image: rabbitmq:4.3-management
+    hostname: rabbitmq # 데이터 디렉터리 이름이 호스트명을 따라가므로 고정한다
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:15672:15672" # 관리 UI
+    volumes:
+      - ./infra/local/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-autota.conf:ro
+      - ./infra/local/rabbitmq/definitions.json:/etc/rabbitmq/definitions/10-topology.json:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+    configs:
+      - source: rabbitmq-user
+        target: /etc/rabbitmq/definitions/20-user.json
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  postgres:
+    # 메이저 버전은 Supabase 프로젝트와 맞춘다(ADR 0005).
+    image: postgres:17
+    environment:
+      POSTGRES_DB: autota
+      POSTGRES_USER: ${DB_USERNAME:?.env에 DB_USERNAME을 넣는다}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?.env에 DB_PASSWORD를 넣는다}
+      TZ: Asia/Seoul
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # 볼륨이 비어 있는 첫 기동 때만 sql/의 *.sql을 이름순으로 실행한다(schema.sql → seed.sql).
+      # 스키마를 바꾼 뒤에는 `docker compose down -v`로 볼륨을 지우고 다시 띄운다.
+      - ./sql:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+configs:
+  # 브로커 계정 definitions. 값이 .env에서 오므로 파일로 커밋하지 않고 여기서 만든다.
+  rabbitmq-user:
+    content: |
+      {
+        "vhosts": [{ "name": "/" }],
+        "users": [
+          {
+            "name": "${RABBITMQ_USERNAME:?.env에 RABBITMQ_USERNAME을 넣는다}",
+            "password": "${RABBITMQ_PASSWORD:?.env에 RABBITMQ_PASSWORD를 넣는다}",
+            "tags": ["administrator"]
+          }
+        ],
+        "permissions": [
+          {
+            "user": "${RABBITMQ_USERNAME}",
+            "vhost": "/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+          }
+        ]
+      }
+
+volumes:
+  rabbitmq-data:
+  postgres-data:
