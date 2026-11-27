@@ -1,0 +1,105 @@
+{
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "exchanges": [
+    {
+      "name": "autota.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "judge.queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-delivery-limit": 3,
+        "x-dead-letter-exchange": "autota.dlx",
+        "x-dead-letter-routing-key": "judge.dlq",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish"
+      }
+    },
+    {
+      "name": "lint.queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-delivery-limit": 3,
+        "x-dead-letter-exchange": "autota.dlx",
+        "x-dead-letter-routing-key": "lint.dlq",
+        "x-dead-letter-strategy": "at-least-once",
+        "x-overflow": "reject-publish"
+      }
+    },
+    {
+      "name": "result.queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-delivery-limit": 3,
+        "x-dead-letter-exchange": "autota.dlx",
+        "x-dead-letter-routing-key": "result.dlq"
+      }
+    },
+    {
+      "name": "judge.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "quorum" }
+    },
+    {
+      "name": "lint.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "quorum" }
+    },
+    {
+      "name": "result.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "quorum" }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "autota.dlx",
+      "vhost": "/",
+      "destination": "judge.dlq",
+      "destination_type": "queue",
+      "routing_key": "judge.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "autota.dlx",
+      "vhost": "/",
+      "destination": "lint.dlq",
+      "destination_type": "queue",
+      "routing_key": "lint.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "autota.dlx",
+      "vhost": "/",
+      "destination": "result.dlq",
+      "destination_type": "queue",
+      "routing_key": "result.dlq",
+      "arguments": {}
+    }
+  ]
+}
