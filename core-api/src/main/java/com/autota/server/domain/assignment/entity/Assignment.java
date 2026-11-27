@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Generated;
-import org.hibernate.generator.EventType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -38,14 +36,18 @@ public class Assignment {
     /** S3. 이 시각 이후 학생에게 점수를 공개한다. Must에서는 항상 null. */
     private Instant scoreReleaseAt;
 
-    /** DB 기본값(now())이 채운다. 읽기 전용. */
-    @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", insertable = false, updatable = false)
+    /** create()가 채운다. 이후 수정 불가. */
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public Assignment(Long courseId, String title, Instant dueAt) {
+    private Assignment(Long courseId, String title, Instant dueAt, Instant createdAt) {
         this.courseId = courseId;
         this.title = title;
         this.dueAt = dueAt;
+        this.createdAt = createdAt;
+    }
+
+    public static Assignment create(Long courseId, String title, Instant dueAt) {
+        return new Assignment(courseId, title, dueAt, Instant.now());
     }
 }

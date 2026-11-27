@@ -25,7 +25,7 @@ public class ProfessorAssignService {
         courseService.checkAccess(courseId, professor); // 본인이 개설한 수업만
 
         Assignment assignment = assignmentRepository.save(
-                new Assignment(
+                Assignment.create(
                         courseId,
                         request.title(),
                         request.dueAt().atZone(SEOUL).toInstant()
